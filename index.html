@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AssignMate pre-experiment prototype for planning assessment work while keeping a study boundary visible.">
+  <title>AssignMate · Pre-experiment prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+  <style>
+    :root{
+      --ground:#F4F6F9; --surface:#FFFFFF; --surface2:#EEF1F6; --line:#D7DDEA;
+      --ink:#182033; --ink2:#4D586E; --ink3:#667188;
+      --indigo:#4656C9; --indigo-soft:#E8EAFC; --indigo-ink:#3040AA;
+      --amber:#B96600; --amber-soft:#FFF0D5; --amber-ink:#784200;
+      --green:#177A50; --green-soft:#DCF3E8; --green-ink:#12613F;
+      --red:#C43838; --red-soft:#FBE3E3;
+      --btn-ink:#FFFFFF; --shadow:0 10px 30px rgba(29,36,54,.10);
+    }
+    @media (prefers-color-scheme: dark){
+      :root:not([data-theme="light"]){
+        --ground:#101320; --surface:#1A1E30; --surface2:#242A40; --line:#3A415B;
+        --ink:#F0F2FA; --ink2:#BCC3D5; --ink3:#A3ABC1;
+        --indigo:#A2AAF7; --indigo-soft:#2A3054; --indigo-ink:#C8CDFB;
+        --amber:#F0B55C; --amber-soft:#3A2F16; --amber-ink:#FFD18B;
+        --green:#67D3A2; --green-soft:#173B2D; --green-ink:#9AE5C2;
+        --red:#F08A87; --red-soft:#3A1E1E; --btn-ink:#111527;
+        --shadow:0 10px 30px rgba(0,0,0,.45);
+      }
+    }
+    *{box-sizing:border-box; margin:0}
+    body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:15px; line-height:1.45; padding-inline:16px; min-height:100vh}
+    button,input,textarea,select{font:inherit}
+    button{touch-action:manipulation}
+    .frame{max-width:480px; margin:0 auto; padding-block:10px 0}
+    .proto-note{font-size:12px; color:var(--ink3); text-align:center; letter-spacing:.04em; text-transform:uppercase; padding-block:6px 10px}
+    .app{background:var(--surface); border:1px solid var(--line); border-radius:22px; box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 20px); min-height:560px; max-height:820px}
+    .top{display:flex; align-items:center; justify-content:space-between; padding:14px 18px 10px}
+    .brand{font-family:"Sora",sans-serif; font-weight:700; font-size:19px; letter-spacing:-.01em}
+    .brand .am{color:var(--indigo)}
+    .unichip{font-size:12px; font-weight:600; color:var(--indigo-ink); background:var(--indigo-soft); border-radius:999px; padding:5px 11px}
+    main{flex:1; min-height:0; overflow-y:auto; padding:4px 18px 18px; display:flex; flex-direction:column; gap:12px; overscroll-behavior:contain}
+    section[hidden]{display:none}
+    .stack{display:flex; flex-direction:column; gap:10px}
+    .row{display:flex; align-items:center; gap:10px}
+    .spread{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .spread[hidden]{display:none}
+    .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px}
+    .card.tint-i{background:var(--indigo-soft); border-color:transparent}
+    .card.tint-g{background:var(--green-soft); border-color:transparent}
+    .eyebrow{font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--ink3); margin-bottom:6px}
+    h2{font-family:"Sora",sans-serif; font-size:17px; font-weight:600; letter-spacing:-.01em; text-wrap:balance}
+    h3{font-family:"Sora",sans-serif; font-size:14px; font-weight:600}
+    .sub{color:var(--ink2); font-size:13.5px}
+    .helper{color:var(--ink2); font-size:12.5px}
+    .btn{font-weight:600; font-size:13.5px; color:var(--btn-ink); background:var(--indigo); border:1px solid transparent; border-radius:10px; padding:10px 14px; cursor:pointer; min-height:44px}
+    .btn.ghost{background:var(--surface2); color:var(--ink); border-color:var(--line)}
+    .btn.text{background:transparent; color:var(--indigo-ink); padding-inline:6px}
+    .btn.small{font-size:12.5px; padding:7px 10px; min-height:40px}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .btnrow{display:flex; gap:8px; margin-top:12px}
+    .btnrow .btn{flex:1}
+    .today-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .today-actions .btn{min-width:0}
+    #moveToday{grid-column:1/-1}
+    .btn:focus-visible,.tab:focus-visible,.asg:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.remove-task:focus-visible{outline:3px solid var(--indigo); outline-offset:2px}
+    .today-main{font-family:"Sora",sans-serif; font-size:18px; font-weight:600; margin-block:2px 5px}
+    .today-meta{display:flex; flex-wrap:wrap; gap:7px; margin-block:9px}
+    .pill{display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; border-radius:999px; padding:5px 9px; background:var(--surface); color:var(--ink2)}
+    .pill.risk{color:var(--amber-ink); background:var(--amber-soft)}
+    .pill.urgent{color:var(--red); background:var(--red-soft)}
+    .pill.ok{color:var(--green-ink); background:var(--green-soft)}
+    .notice{border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-block:10px; color:var(--ink2); background:var(--surface2); font-size:12.5px}
+    .notice.ok{border-color:var(--green); background:var(--green-soft); color:var(--green-ink)}
+    .notice.warn{border-color:var(--amber); background:var(--amber-soft); color:var(--amber-ink)}
+    .notice strong{display:block; color:inherit; margin-bottom:2px}
+    .notice.warn strong{font-size:15px}
+    .notice .fixrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+    .notice details{margin-top:10px}
+    .notice summary{cursor:pointer; font-weight:600}
+    .notice details ul{margin:6px 0 0; padding-left:18px}
+    .asg-alert{margin:7px 0 0; font-size:12.5px; font-weight:700; color:var(--amber-ink)}
+    .saved-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; padding-top:6px; border-top:1px solid var(--line)}
+    .saved-row[hidden],.clear-confirm[hidden],.moved-note[hidden]{display:none}
+    .clear-confirm{margin-top:6px; padding:12px; border-radius:12px; background:var(--surface2); border:1px solid var(--line)}
+    .clear-confirm .helper{margin-top:6px}
+    .btn.danger{background:var(--red); color:var(--btn-ink)}
+    .field.fix-target{outline:2px solid var(--amber); outline-offset:4px; border-radius:10px}
+    .pause-estimate{margin:8px 0 0; font-size:13px; font-weight:600; color:var(--ink)}
+    .moved-note{display:block; margin-top:4px; font-size:12.5px; font-weight:600; color:var(--indigo-ink)}
+    .task.flash{outline:2px solid var(--indigo); outline-offset:2px}
+    .preview-audience{display:block; margin-top:5px}
+    .asg{border:1px solid var(--line); border-radius:14px; padding:13px 14px; background:var(--surface); cursor:pointer}
+    .asg:hover{border-color:var(--indigo)}
+    .asg.urgent{border-color:var(--red); background:var(--red-soft)}
+    .asg.soon{border-color:var(--amber); background:var(--amber-soft)}
+    .asg.on-track{border-left:4px solid var(--green)}
+    .asg .toprow{display:flex; align-items:center; gap:7px; margin-bottom:6px; flex-wrap:wrap}
+    .code{font-family:"Sora",sans-serif; font-size:12px; font-weight:600; background:var(--surface2); border-radius:7px; padding:4px 8px; white-space:nowrap}
+    .due{margin-left:auto; font-size:12.5px; color:var(--ink2); font-variant-numeric:tabular-nums; white-space:nowrap}
+    .due.hot{color:var(--red); font-weight:600}
+    .due.urgent{color:var(--red); font-weight:700}
+    .due.soon{color:var(--amber-ink); font-weight:700}
+    .due.on-track{color:var(--green-ink); font-weight:600}
+    .asg b{font-size:14px; font-weight:600; display:block}
+    .pbar{height:9px; border-radius:999px; background:var(--surface2); overflow:hidden; margin-top:10px}
+    .pbar i{display:block; height:100%; border-radius:999px; background:var(--indigo); transition:width .3s}
+    .pbar.g i{background:var(--green)}
+    .pmeta{display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink2); margin-top:6px; font-variant-numeric:tabular-nums}
+    .ringwrap{display:flex; align-items:center; gap:16px}
+    .ring{width:86px; height:86px; flex:none}
+    .ring circle{fill:none; stroke-width:9}
+    .ring .track{stroke:var(--surface2)}
+    .ring .val{stroke:var(--indigo); stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset .35s}
+    .ring text{font-family:"Sora",sans-serif; font-weight:700; font-size:19px; fill:var(--ink)}
+    .task{display:flex; align-items:flex-start; gap:10px; padding:11px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+    .task.conflict{border-color:var(--amber); box-shadow:inset 3px 0 0 var(--amber)}
+    .task.urgent{border-color:var(--red); background:var(--red-soft)}
+    .task.soon{border-color:var(--amber); background:var(--amber-soft)}
+    .task .what{flex:1; min-width:0}
+    .task .what b{font-size:13.5px; font-weight:600; display:block}
+    .task .what span{font-size:12.5px; color:var(--ink2); font-variant-numeric:tabular-nums}
+    .task.done .what b{color:var(--ink2); text-decoration:line-through}
+    .task-date.urgent{color:var(--red)!important; font-weight:700}
+    .task-date.soon{color:var(--amber-ink)!important; font-weight:700}
+    .task-progress{height:6px; border-radius:999px; background:var(--surface2); overflow:hidden; margin-top:7px; max-width:220px}
+    .task-progress i{display:block; height:100%; border-radius:999px; background:var(--indigo)}
+    .task.done .task-progress i{background:var(--green)}
+    .task-group{display:flex; flex-direction:column; gap:8px}
+    .task-group + .task-group{margin-top:16px; padding-top:14px; border-top:1px solid var(--line)}
+    .task-group-title{display:flex; align-items:center; gap:8px; color:var(--ink); font-size:13px; font-weight:700}
+    .task-group-title:before{content:""; width:8px; height:8px; border-radius:50%; background:var(--indigo)}
+    .task-group.team .task-group-title:before{background:var(--amber)}
+    .status{font-size:12px; font-weight:600; border-radius:999px; padding:4px 8px; background:var(--surface2); color:var(--ink2); white-space:nowrap}
+    .status.progress,.status.in-progress{background:var(--indigo-soft); color:var(--indigo-ink)}
+    .status.blocked{background:var(--red-soft); color:var(--red)}
+    .status.paused{background:var(--amber-soft); color:var(--amber-ink)}
+    .status.done{background:var(--green-soft); color:var(--green-ink)}
+    .task-actions{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:7px}
+    .who{font-size:12px; font-weight:600; border-radius:999px; padding:4px 8px; background:var(--surface2); color:var(--ink2); white-space:nowrap}
+    .who.you{background:var(--indigo-soft); color:var(--indigo-ink)}
+    .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px}
+    .field label,.field legend{font-size:12.5px; font-weight:600; color:var(--ink)}
+    .field input,.field textarea,.field select{font-size:14px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; width:100%}
+    .field textarea{min-height:82px; resize:vertical}
+    .field input[aria-invalid="true"]{border-color:var(--red)}
+    .error{font-size:12.5px; color:var(--red); min-height:18px}
+    fieldset.field{border:0; padding:0}
+    .days{display:flex; flex-wrap:wrap; gap:7px; margin-top:3px}
+    .day{position:relative}
+    .day input{position:absolute; opacity:0; inset:0; pointer-events:none}
+    .day span{display:grid; place-items:center; width:42px; height:42px; border-radius:10px; border:1px solid var(--line); color:var(--ink2); background:var(--surface); font-size:12.5px; font-weight:600; cursor:pointer}
+    .day input:checked + span{background:var(--indigo-soft); color:var(--indigo-ink); border-color:var(--indigo)}
+    .day input:focus-visible + span{outline:3px solid var(--indigo); outline-offset:2px}
+    .stepper{display:flex; gap:7px; align-items:center; margin-bottom:12px}
+    .stepdot{width:26px; height:26px; display:grid; place-items:center; border-radius:50%; background:var(--surface2); color:var(--ink2); font-size:12px; font-weight:700}
+    .stepdot.on{background:var(--indigo); color:var(--btn-ink)}
+    .stepline{height:2px; flex:1; background:var(--line)}
+    .edit-task{display:flex; flex-direction:column; gap:9px; border:1px solid var(--line); border-radius:12px; padding:11px; background:var(--surface)}
+    .edit-task.conflict{border-color:var(--amber); box-shadow:inset 3px 0 0 var(--amber)}
+    .edit-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+    .edit-grid{display:grid; grid-template-columns:1.2fr .9fr; gap:8px}
+    .edit-field{display:flex; flex-direction:column; gap:4px; color:var(--ink2); font-size:12px; font-weight:600}
+    .edit-task input,.edit-task select{min-width:0; width:100%; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:8px; padding:9px; font-size:13px}
+    .remove-task{border:0; background:transparent; color:var(--red); font-weight:600; font-size:12.5px; padding:8px; min-height:40px; cursor:pointer}
+    .wizard-head{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+    .wizard-head .btn{flex:none}
+    .decision{border-left:3px solid var(--indigo); padding-left:10px; margin-top:10px}
+    .group-hero{background:linear-gradient(145deg,var(--indigo-soft),var(--surface)); border-color:transparent}
+    .share-state{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:5px 9px; color:var(--green-ink); background:var(--green-soft); font-size:12px; font-weight:600}
+    .share-state:before{content:""; width:7px; height:7px; border-radius:50%; background:var(--green)}
+    .privacy-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px}
+    .privacy-card{border:1px solid var(--line); border-radius:11px; padding:10px; background:var(--surface)}
+    .privacy-card b{display:block; font-size:12.5px; margin-bottom:5px}
+    .privacy-card ul{padding-left:17px; color:var(--ink2); font-size:12px}
+    .privacy-card li+li{margin-top:3px}
+    .lock-mark{width:44px; height:44px; display:grid; place-items:center; border-radius:13px; color:var(--indigo-ink); background:var(--indigo-soft); font-size:21px; margin-bottom:10px}
+    .member-list{display:flex; flex-direction:column; gap:9px}
+    .member{display:grid; grid-template-columns:42px 1fr auto; align-items:center; gap:11px; padding:12px; border:1px solid var(--line); border-radius:13px; background:var(--surface)}
+    .avatar{width:42px; height:42px; display:grid; place-items:center; border-radius:50%; color:var(--btn-ink); background:var(--indigo); font-family:"Sora",sans-serif; font-weight:700; font-size:13px}
+    .avatar.peer{color:var(--indigo-ink); background:var(--indigo-soft)}
+    .member-info{min-width:0}
+    .member-info b{display:block; font-size:13.5px}
+    .member-info span{display:block; color:var(--ink2); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .member-pct{font-family:"Sora",sans-serif; font-size:17px; font-weight:700; font-variant-numeric:tabular-nums}
+    .member-bar{grid-column:2 / -1; height:7px; overflow:hidden; border-radius:999px; background:var(--surface2)}
+    .member-bar i{display:block; height:100%; border-radius:999px; background:var(--indigo)}
+    .share-preview[hidden]{display:none}
+    .share-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:11px}
+    .share-actions .btn{flex:1}
+    .toggle-row{display:flex; justify-content:space-between; align-items:flex-start; gap:12px}
+    .switch{position:relative; width:46px; height:26px; flex:none}
+    .switch input{opacity:0; width:0; height:0}
+    .slider{position:absolute; inset:0; cursor:pointer; background:var(--surface2); border:1px solid var(--line); border-radius:999px}
+    .slider:before{content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; background:var(--ink3); border-radius:50%; transition:.2s}
+    .switch input:checked + .slider{background:var(--indigo)}
+    .switch input:checked + .slider:before{transform:translateX(20px); background:var(--btn-ink)}
+    dialog{width:min(420px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; margin:auto; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0; box-shadow:var(--shadow)}
+    dialog::backdrop{background:rgba(16,19,32,.58)}
+    .dialog-body{padding:18px}
+    .dialog-progress-options{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-block:14px 10px}
+    .progress-choice{font-weight:700; color:var(--indigo-ink); background:var(--indigo-soft); border:1px solid transparent; border-radius:10px; padding:10px; cursor:pointer}
+    .progress-choice[aria-pressed="true"]{border-color:var(--indigo); box-shadow:0 0 0 2px var(--indigo-soft)}
+    .custom-progress{display:flex; align-items:center; gap:8px; margin-top:8px}
+    .custom-progress input{width:100%; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+    nav{display:flex; flex:none; border-top:1px solid var(--line); background:var(--surface)}
+    nav[hidden]{display:none}
+    .tab{flex:1; font-size:12px; font-weight:600; color:var(--ink3); background:none; border:0; padding:10px 4px 12px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; min-height:58px}
+    .tab svg{width:21px; height:21px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+    .tab[aria-selected="true"]{color:var(--indigo-ink)}
+    .tab[hidden],.field[hidden]{display:none}
+    .toast{position:fixed; left:50%; bottom:86px; transform:translateX(-50%) translateY(8px); background:var(--ink); color:var(--ground); font-size:13px; font-weight:500; border-radius:10px; padding:10px 16px; opacity:0; pointer-events:none; transition:.25s; max-width:90vw; text-align:center; z-index:5}
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+    @media (max-width:520px){body{padding-inline:0; overflow:hidden}.frame{max-width:none; height:100dvh; padding-block:0; display:flex; flex-direction:column}.proto-note{flex:none; padding-inline:8px; font-size:10.5px; white-space:nowrap}.app{flex:1; border-radius:0; border-inline:0; height:auto; min-height:0; max-height:none}nav{padding-bottom:env(safe-area-inset-bottom)}}
+    @media (max-width:380px){.proto-note{white-space:normal}.edit-grid,.privacy-grid{grid-template-columns:1fr}.btnrow{flex-direction:column}.spread{align-items:flex-start}.due{margin-left:0;width:100%}.member{grid-template-columns:38px 1fr auto}.avatar{width:38px;height:38px}}
+    @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+    .header-actions{display:flex;align-items:center;gap:8px}
+    .profile-button{border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--ink);padding:7px 10px;font:inherit;font-size:12px;cursor:pointer}
+    .profile-greeting{font-size:22px;margin:0 0 14px;overflow-wrap:anywhere}
+    @media(max-width:380px){.header-actions{gap:5px}.profile-button{padding:7px}.unichip{font-size:10px}}
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="proto-note">AssignMate · pre-experiment prototype · Team 06_Carol</p>
+    <div class="app">
+      <header class="top">
+        <h1 class="brand">Assign<span class="am">Mate</span></h1>
+        <div class="header-actions"><div class="unichip" id="todayDate">Today</div><button class="profile-button" id="openProfile" type="button" aria-haspopup="dialog">Profile</button></div>
+      </header>
+
+      <main>
+        <section id="panel-asg" role="tabpanel" aria-labelledby="tab-asg">
+          <h2 class="profile-greeting" id="profileGreeting" hidden></h2>
+          <div class="card" id="emptyState" style="margin-bottom:12px">
+            <h2>Add your first assignment</h2>
+            <p class="sub" style="margin:4px 0 12px">Your data stays on this device and isn’t sent anywhere.</p>
+            <div class="btnrow"><button class="btn" id="emptyAdd">Add assignment</button><button class="btn ghost" id="loadDemo">Load fictional example</button></div>
+          </div>
+
+          <div class="card tint-g" id="todayCard" style="margin-bottom:12px" hidden>
+            <div class="spread"><p class="eyebrow" style="margin:0">Today's focus</p><span class="pill risk" id="todayRisk">Due soon</span></div>
+            <p class="today-main" id="todayTask">Draft findings section</p>
+            <p class="sub" id="todayCode">DECO6500 · A2 research notebook</p>
+            <div class="today-meta"><span class="pill" id="todayEffort">45 min</span><span class="pill" id="todayBoundary">Study window ends 9:30 pm</span></div>
+            <p class="helper" id="todayStatus"></p>
+            <div class="btnrow today-actions"><button class="btn" id="startToday">Start task</button><button class="btn ghost" id="pauseToday" hidden>Pause task</button><button class="btn" id="completeToday" hidden>Complete task</button><button class="btn ghost" id="moveToday">Reschedule</button></div>
+            <p class="moved-note" id="todayMoved" role="status" hidden><span id="todayMovedText"></span> <button class="btn text small" id="showMoved" type="button">Show in plan</button></p>
+          </div>
+
+          <div class="spread" id="asgHead" style="margin-bottom:8px">
+            <div><p class="eyebrow" style="margin:0">Assignments</p></div>
+            <button class="btn small" id="openAdd">+ Add assignment</button>
+          </div>
+          <div class="stack" id="asgList"></div>
+          <div class="saved-row" id="savedRow">
+            <span class="helper" id="savedLabel">Saved in this browser only.</span>
+            <button class="btn text small" id="clearSaved" type="button" aria-expanded="false" aria-controls="clearConfirm">Clear saved data</button>
+          </div>
+          <div class="clear-confirm" id="clearConfirm" hidden>
+            <p class="sub" id="storageStatus">Checking whether this browser can save your plan.</p>
+            <p class="helper" id="storageLimits">Saving happens only in this browser on this device. Nothing is uploaded and nothing is shared with anyone. Clearing your browser's site data, or opening the prototype in a private window or a different browser, means the plan will not be there.</p>
+            <div class="btnrow"><button class="btn ghost small" id="cancelClear" type="button">Cancel</button><button class="btn small danger" id="confirmClear" type="button">Clear everything</button></div>
+          </div>
+        </section>
+
+        <section id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+          <div class="card" style="margin-bottom:12px">
+            <div class="field" style="margin-bottom:12px"><label for="planAssignment">Viewing plan</label><select id="planAssignment"></select></div>
+            <div class="ringwrap">
+              <svg class="ring" id="progressRing" viewBox="0 0 100 100" role="img" aria-label="Assignment progress: 0%">
+                <circle class="track" cx="50" cy="50" r="42"></circle>
+                <circle class="val" id="ringVal" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"></circle>
+                <text id="ringTxt" x="50" y="57" text-anchor="middle">0%</text>
+              </svg>
+              <div style="min-width:0">
+                <p class="eyebrow" id="planCode" style="margin-bottom:2px">—</p>
+                <h2 id="planTitle">—</h2>
+                <p class="sub" id="planMeta" style="margin-top:3px">—</p>
+              </div>
+            </div>
+            <div class="decision"><p class="helper" id="planReason">Plan rationale</p></div>
+            <div class="notice" id="currentPlanHealth" role="status"></div>
+            <button class="btn ghost small" id="editCurrent" style="margin-top:12px">Adjust this plan</button>
+            <button class="btn small" id="planEmptyAdd" style="margin-top:12px" hidden>Add assignment</button>
+          </div>
+          <p class="eyebrow" style="margin-bottom:7px">Tasks</p>
+          <div class="stack" id="taskList"></div>
+          
+        </section>
+
+        <section id="panel-add" aria-label="Add assignment" hidden>
+          <div class="wizard-head"><button class="btn text small" id="closeWizard">← Cancel</button><p class="eyebrow" style="margin:0">Plan builder</p></div>
+          <div class="stepper" aria-label="Step 1 of 2" id="stepper">
+            <span class="stepdot on">1</span><span class="stepline"></span><span class="stepdot">2</span>
+          </div>
+          <div id="addStep1">
+            <p class="eyebrow">Step 1 · assignment and constraints</p>
+            <h2>What needs to be planned?</h2>
+            
+            <form id="assignmentForm" novalidate>
+              <div class="field"><label for="f-code">Course code</label><input id="f-code" required placeholder="e.g. COMP7110" autocomplete="off"></div>
+              <div class="field"><label for="f-title">Assignment title</label><input id="f-title" required placeholder="e.g. Iteration 2 submission" autocomplete="off"></div>
+              <div class="field" hidden><label for="f-type">Assignment type</label><select id="f-type"><option value="solo">Individual</option><option value="team">Team</option></select></div>
+              <div class="field"><label for="f-deadline">Deadline</label><input id="f-deadline" type="datetime-local" required></div>
+              <div class="field"><label for="f-brief">What must be delivered? (optional)</label><textarea id="f-brief" placeholder="One deliverable per line, to name the tasks"></textarea></div>
+              <div class="field"><label for="f-effort">Total work expected for this assignment</label><select id="f-effort"><option value="180">About 3 hours</option><option value="300" selected>About 5 hours</option><option value="480">About 8 hours</option><option value="720">About 12 hours</option><option value="960">About 16 hours</option></select><span class="helper">A rough estimate is enough; you can edit every generated task.</span></div>
+              <fieldset class="field"><legend>Days you can work</legend><div class="days" id="availableDays"></div></fieldset>
+              <div class="field"><label for="f-hours">Maximum time you can give this assignment each week</label><select id="f-hours"><option value="3">About 3 hours</option><option value="5" selected>About 5 hours</option><option value="8">About 8 hours</option><option value="12">About 12 hours</option></select><span class="helper">Enter time left after classes, work and other commitments.</span></div>
+              <div class="edit-grid">
+                <div class="field"><label for="f-start">Study window starts</label><input id="f-start" type="time" value="18:00"></div>
+                <div class="field"><label for="f-stop">Latest study finish</label><input id="f-stop" type="time" value="21:30"></div>
+              </div>
+              <p class="helper" style="margin:-4px 0 10px">The same window applies to every selected day. Tasks outside it or over weekly capacity will be flagged for review.</p>
+              <div class="notice warn" id="regenerateWarning" hidden><strong>Generating again replaces task history</strong>A new draft will replace the current tasks and their statuses. Use Cancel to keep the existing plan, or return to Step 2 to edit tasks directly.</div>
+              <div class="error" id="formError" role="alert"></div>
+              <div class="btnrow"><button class="btn" id="generatePlanButton" type="submit">Generate draft plan</button></div>
+            </form>
+          </div>
+          <div id="addStep2" hidden>
+            <p class="eyebrow">Step 2 · review before accepting</p>
+            <h2>Does this plan feel realistic?</h2>
+            <p class="sub" id="generatedReason" style="margin:4px 0 12px"></p>
+            <div class="notice" id="planHealth" role="status" aria-live="polite"></div>
+            <div class="stack" id="generatedTasks"></div>
+            <button class="btn ghost small" id="addGeneratedTask" style="width:100%; margin-top:10px">+ Add missing task</button>
+            <p class="helper" style="margin-top:10px">Change, add or remove tasks. This is a rule-based prototype suggestion, not an instruction or an AI understanding of the full brief.</p>
+            <div class="btnrow"><button class="btn ghost" id="backToForm">Back</button><button class="btn" id="confirmPlan">Use this plan</button></div>
+          </div>
+        </section>
+
+        <section id="panel-group" role="tabpanel" aria-labelledby="tab-group" hidden>
+          <div class="card group-hero" style="margin-bottom:12px">
+            <p class="eyebrow">Optional concept · Draft H-MVP02</p>
+            <h2>Share progress to see your circle</h2>
+            <p class="sub" style="margin-top:5px">Progress is mutual and assignment-specific: only members who share to the same circle can see one another.</p>
+            <div class="field" style="margin:12px 0 0">
+              <label for="groupAssignment">Assignment circle</label>
+              <select id="groupAssignment" aria-describedby="groupAssignmentHelp"></select>
+              <span class="helper" id="groupAssignmentHelp">Choose which assignment's coarse progress you want to share. Circles are invite-only in the product concept.</span>
+            </div>
+          </div>
+
+          <div class="card" id="groupEmpty">
+            <p class="eyebrow">No assignment yet</p>
+            <h3>Create a plan before joining a circle</h3>
+            <p class="sub" style="margin-top:5px">The planning experience remains fully usable without progress sharing.</p>
+            <div class="btnrow"><button class="btn" id="groupAdd">Add assignment</button><button class="btn ghost" id="groupDemo">Load fictional example</button></div>
+          </div>
+
+          <div class="card" id="groupLocked" hidden>
+            <div class="lock-mark" aria-hidden="true">🔒</div>
+            <p class="eyebrow">Private until you opt in</p>
+            <h3 id="lockedGroupTitle">Assignment progress circle</h3>
+            <p class="sub" style="margin-top:5px">Sharing is optional. Until you share, other members' progress stays hidden—and they cannot see yours. The exact fictional audience appears below so you can make an informed choice.</p>
+            <div class="privacy-grid">
+              <div class="privacy-card"><b>Circle members see</b><ul><li>This assignment circle</li><li>Your display label</li><li>Your reported progress across assigned effort</li><li>Broad update recency</li></ul></div>
+              <div class="privacy-card"><b>Never shared</b><ul><li>Marks or task details</li><li>Schedule or study window</li><li>Wellbeing or health data</li></ul></div>
+            </div>
+            <div class="notice" id="lockedShareSummary"><strong>Exact preview before sharing</strong><span id="lockedSharePreview"></span><span id="lockedAudience" class="preview-audience"></span></div>
+            <p class="helper" style="margin-top:10px">Prototype simulation: nothing is uploaded or sent. You can stop sharing at any time.</p>
+            <button class="btn" id="enableSharing" aria-describedby="lockedSharePreview lockedAudience" style="width:100%; margin-top:12px">Share my progress &amp; view circle</button>
+          </div>
+
+          <div id="groupOpen" hidden>
+            <div class="card tint-g" style="margin-bottom:12px">
+              <div class="spread"><div><p class="eyebrow" style="margin:0">Assignment circle</p><h3 id="openGroupTitle">Sharing on</h3></div><span class="share-state">Sharing on</span></div>
+              <p class="sub" style="margin-top:7px">Only mutually opted-in members are shown. Your planning tools work the same if you stop sharing.</p>
+              <div class="share-actions"><button class="btn ghost small" id="reviewShare" aria-expanded="false" aria-controls="sharePreview">Review what others see</button><button class="btn text small" id="stopSharing">Stop sharing</button></div>
+              <div class="notice share-preview" id="sharePreview" hidden><strong>Your shared summary</strong><span id="sharePreviewText">Display label, progress and broad update recency.</span></div>
+            </div>
+            <p class="eyebrow" style="margin-bottom:7px">Members currently sharing</p>
+            <div class="member-list" id="memberList"></div>
+            <div class="card" style="margin-top:10px"><p class="sub">Each percentage comes from that person's own assigned tasks and effort estimates. It is context, not a leaderboard, grade or fair measure of contribution.</p></div>
+            <p class="helper" style="margin:9px 2px 0">Fictional members and progress are used for prototype review; there is no live account or group connection.</p>
+          </div>
+        </section>
+
+        <section id="panel-friends" role="tabpanel" aria-labelledby="tab-friends" hidden>
+          <div class="card" style="margin-bottom:12px">
+            <p class="eyebrow">Friends &amp; teammates</p>
+            <h2>See who else is working on it</h2>
+            <p class="sub" style="margin-top:5px">Two views: classmates from a shared course, and your teammates' split on a team assignment. Fictional example data only — there is no live account, search or messaging in this prototype.</p>
+          </div>
+
+          <div class="card" id="friendsEmpty">
+            <p class="eyebrow">No assignment yet</p>
+            <h3>Add an assignment to see friends and teammates</h3>
+            <p class="sub" style="margin-top:5px">Course-matched classmates and any team roster appear once you have at least one assignment.</p>
+            <div class="btnrow"><button class="btn" id="friendsAdd">Add assignment</button><button class="btn ghost" id="friendsDemo">Load fictional example</button></div>
+          </div>
+
+          <div id="friendsContent" hidden>
+            <div class="card" style="margin-bottom:12px">
+              <div class="field" style="margin-bottom:0"><label for="friendsCourse">Classmates in this course</label><select id="friendsCourse" aria-describedby="friendsCourseHelp"></select><span class="helper" id="friendsCourseHelp">Matched to the course code on your own assignments.</span></div>
+            </div>
+            <div class="member-list" id="courseFriendList" style="margin-bottom:6px"></div>
+            <p class="helper" style="margin:0 2px 16px">Fictional classmates shown for prototype review. Adding a real friend is out of scope for this build.</p>
+
+            <div class="card" id="teamRosterEmpty" style="margin-bottom:12px" hidden>
+              <p class="eyebrow">No team assignment yet</p>
+              <h3>Team rosters need a team assignment</h3>
+              <p class="sub" style="margin-top:5px">Mark an assignment "Team" in the plan builder to see each teammate's share of the work here.</p>
+            </div>
+            <div id="teamRosterContent" hidden>
+              <div class="card" style="margin-bottom:12px">
+                <div class="field" style="margin-bottom:0"><label for="friendsTeamAssignment">Team roster for</label><select id="friendsTeamAssignment"></select></div>
+              </div>
+              <p class="eyebrow" style="margin-bottom:7px">Who owns what · this assignment</p>
+              <div class="member-list" id="teamMemberList"></div>
+              <div class="card" style="margin-top:10px"><p class="sub">Each percentage is that person's reported progress on assigned tasks, weighted by effort — the same measure used on your Plan tab. Unassigned effort has no owner yet.</p></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav id="mainNav" role="tablist" aria-label="Main sections">
+        <button class="tab" id="tab-asg" role="tab" aria-selected="true" aria-controls="panel-asg" data-panel="panel-asg">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Today
+        </button>
+        <button class="tab" id="tab-plan" role="tab" aria-selected="false" aria-controls="panel-plan" data-panel="panel-plan" tabindex="-1">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>Plan
+        </button>
+        <button class="tab" id="tab-group" hidden role="tab" aria-selected="false" aria-controls="panel-group" data-panel="panel-group" tabindex="-1">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c.7-3.1 2.7-4.7 5-4.7s4.3 1.6 5 4.7M14.5 14.8c2.6.2 4.3 1.6 4.9 4.2"/></svg>Group
+        </button>
+      </nav>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <dialog id="profileDialog" aria-labelledby="profileTitle" aria-describedby="profileHelp">
+    <form id="profileForm" class="dialog-body">
+      <p class="eyebrow">Profile</p>
+      <h2 id="profileTitle">Make yourself at home</h2>
+      <p class="sub" id="profileHelp" style="margin:6px 0 16px">Your nickname is optional and saved in this browser only.</p>
+      <div class="field"><label for="profileName">Your name (nickname)</label><input id="profileName" type="text" maxlength="40" autocomplete="off" aria-describedby="profileHelp" placeholder="e.g. Amy"></div>
+      <p class="error" id="profileError" role="alert"></p>
+      <div class="btnrow"><button class="btn ghost" id="cancelProfile" type="button">Cancel</button><button class="btn" type="submit">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="completionDialog" aria-labelledby="completionTitle">
+    <div class="dialog-body">
+        <p class="eyebrow">Completion check</p>
+        <h2 id="completionTitle">Have you fully completed this task?</h2>
+        <p class="sub" id="completionTaskName" style="margin-top:6px"></p>
+        <div class="btnrow"><button class="btn ghost" id="notFinished" type="button" autofocus>Not yet</button><button class="btn" id="confirmFinished" type="button">Yes, complete</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="pauseDialog" aria-labelledby="pauseTitle" aria-describedby="pauseTaskName">
+    <div class="dialog-body">
+        <p class="eyebrow">Pause task</p>
+        <h2 id="pauseTitle">How much have you completed?</h2>
+        <p class="sub" id="pauseTaskName" style="margin-top:6px"></p>
+        <div class="dialog-progress-options" aria-label="Select task progress">
+          <button class="progress-choice" type="button" data-progress="30" aria-pressed="false">30%</button>
+          <button class="progress-choice" type="button" data-progress="50" aria-pressed="false">50%</button>
+          <button class="progress-choice" type="button" data-progress="70" aria-pressed="false">70%</button>
+        </div>
+        <label class="helper" for="customProgress">Or enter a percentage</label>
+        <div class="custom-progress"><input id="customProgress" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="0-99" aria-describedby="progressError"><span>%</span></div>
+        <p class="pause-estimate" id="pauseEstimate" aria-live="polite"></p>
+        <p class="error" id="progressError" role="alert"></p>
+        <div class="btnrow"><button class="btn ghost" id="cancelProgress" type="button">Cancel</button><button class="btn" id="saveProgress" type="button">Save &amp; pause</button></div>
+    </div>
+  </dialog>
+
+  <script>
+  (function(){
+    "use strict";
+    var MS_DAY=86400000;
+    var DAY_LABELS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    var assignments=[];
+    var current=null,generated=[],editingId=null,draftSettings=null,selectedGroupAssignmentId=null,sharingByAssignment={},selectedFriendsCourse=null,selectedFriendsTeamId=null,completionTarget=null,pauseTarget=null,selectedProgress=0,lastMoved=null;
+    var $=function(id){return document.getElementById(id);};
+    var toastEl=$("toast"),toastTimer;
+
+    function esc(value){return String(value).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+    function toast(message){toastEl.textContent=message;toastEl.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toastEl.classList.remove("show");},2600);}
+    function pad(value){return String(value).padStart(2,"0");}
+    function localDateKey(value){var d=value instanceof Date?value:new Date(value);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+    function dateOnly(value){if(value instanceof Date)return new Date(value.getFullYear(),value.getMonth(),value.getDate(),12);return new Date(String(value).slice(0,10)+"T12:00:00");}
+    function startOfDay(value){var d=value?dateOnly(value):new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+    function weekdayIndex(value){return (dateOnly(value).getDay()+6)%7;}
+    function weekKey(value){var d=startOfDay(value),offset=(d.getDay()+6)%7;d.setDate(d.getDate()-offset);return localDateKey(d);}
+    function minutesFromTime(value){var parts=String(value||"00:00").split(":");return Number(parts[0])*60+Number(parts[1]);}
+    function timeValue(minutes){var value=Math.max(0,Math.min(1439,Math.round(minutes)));return pad(Math.floor(value/60))+":"+pad(value%60);}
+    function timeLabel(value){return new Date("2000-01-01T"+value).toLocaleTimeString("en-AU",{hour:"numeric",minute:"2-digit"});}
+    function endTimeLabel(task){return timeLabel(timeValue(minutesFromTime(task.start)+Number(task.minutes)));}
+    function taskEnd(task){var d=new Date(task.date+"T00:00:00");d.setMinutes(minutesFromTime(task.start)+Number(task.minutes));return d;}
+    function daysLeft(a){return Math.ceil((startOfDay(a.deadline)-startOfDay())/MS_DAY);}
+    function dateLabel(value,withTime){var d=withTime?new Date(value):dateOnly(value);if(Number.isNaN(d.getTime()))return "Date needed";var opts={weekday:"short",day:"numeric",month:"short"};if(withTime){opts.hour="numeric";opts.minute="2-digit";}return new Intl.DateTimeFormat("en-AU",opts).format(d);}
+    function effortLabel(minutes){var value=Math.round(Number(minutes)||0);if(value<60)return value+" min";var hours=Math.floor(value/60),remainder=value%60;return hours+" hr"+(remainder?" "+remainder+" min":"");}
+    function safeMinutes(task){var value=Number(task.minutes);return Number.isFinite(value)&&value>0?value:0;}
+    function taskProgress(task){if(typeof task.progress==="number")return Math.max(0,Math.min(100,task.progress));return task.status==="done"?100:task.status==="in-progress"?50:0;}
+    function pct(a){var total=a.tasks.reduce(function(sum,t){return sum+safeMinutes(t);},0);var done=a.tasks.reduce(function(sum,t){return sum+(safeMinutes(t)*taskProgress(t)/100);},0);return total?Math.max(0,Math.min(100,Math.round(done/total*100))):0;}
+    function progressForOwner(a,owner){var mine=a.tasks.filter(function(t){return t.owner===owner;}),total=mine.reduce(function(sum,t){return sum+safeMinutes(t);},0),done=mine.reduce(function(sum,t){return sum+(safeMinutes(t)*taskProgress(t)/100);},0);return {hasAssigned:total>0,value:total?Math.max(0,Math.min(100,Math.round(done/total*100))):null,total:total,done:done};}
+    function ownerRecency(a,owner){var mine=a.tasks.filter(function(t){return t.owner===owner;});if(!mine.length)return "No assigned work";if(mine.some(function(t){return /just now/i.test(t.updated||"");}))return "Updated just now";if(mine.some(function(t){return t.status!=="not-started";}))return "Progress recorded in this session";return "No progress update yet";}
+    function personalProgress(a){return progressForOwner(a,"You");}
+    function personalPct(a){var progress=personalProgress(a);return progress.hasAssigned?progress.value:0;}
+    function personalRecency(a){return ownerRecency(a,"You");}
+    function initials(name){if(name==="You")return "YOU";if(name==="Unassigned")return "—";var parts=String(name).trim().split(/\s+/);return (parts[0][0]+(parts[1]?parts[1][0]:"")).toUpperCase();}
+    function teamRoster(a){var seen={},owners=[];a.tasks.forEach(function(t){if(!seen[t.owner]){seen[t.owner]=true;owners.push(t.owner);}});owners.sort(function(x,y){if(x==="You")return -1;if(y==="You")return 1;if(x==="Unassigned")return 1;if(y==="Unassigned")return -1;return x.localeCompare(y);});return owners;}
+    function fictionalCourseFriends(code){var data={"DECO6500":[{initials:"RB",name:"Ria B.",progress:52,recency:"Updated this week"},{initials:"NT",name:"Noah T.",progress:71,recency:"Updated recently"},{initials:"EF",name:"Elif F.",progress:34,recency:"Updated this week"}],"COMP7110":[{initials:"AR",name:"Alex R.",progress:46,recency:"Updated recently"},{initials:"SK",name:"Sam K.",progress:63,recency:"Updated this week"},{initials:"PD",name:"Priya D.",progress:58,recency:"Updated recently"}]};return data[code]||[{initials:"JT",name:"Jordan T.",progress:38,recency:"Updated recently"},{initials:"ML",name:"Morgan L.",progress:57,recency:"Updated this week"}];}
+    function statusLabel(task){var base={"not-started":"Not started","in-progress":"In progress","paused":"Paused","blocked":"Blocked","done":"Done"}[task.status]||task.status;return task.status==="in-progress"||task.status==="paused"?base+" · "+taskProgress(task)+"%":base;}
+    function dateUrgency(value){var days=Math.ceil((startOfDay(value)-startOfDay())/MS_DAY);if(days<=2)return {className:"urgent",label:days<0?"Overdue":days===0?"Due today":days===1?"Due tomorrow":"Due in 2 days"};if(days<=7)return {className:"soon",label:"Due soon"};return {className:"on-track",label:"On track"};}
+    function setTodayDate(){$("todayDate").textContent=new Intl.DateTimeFormat("en-AU",{weekday:"short",day:"numeric",month:"short"}).format(new Date());}
+    function settingsFor(a){var weekly=Number(a.weeklyMinutes),effort=Number(a.totalEffort);return {code:a.code,title:a.title,type:a.type,deadline:a.deadline,brief:a.brief||"",available:(a.available||[0,1,2,3,4]).slice(),weeklyMinutes:Number.isFinite(weekly)&&weekly>0?weekly:300,totalEffort:Number.isFinite(effort)&&effort>0?effort:a.tasks.reduce(function(sum,t){return sum+safeMinutes(t);},0),start:a.start||"18:00",stop:a.stop||"21:30"};}
+    function isAvailable(settings,date){return settings.available.indexOf(weekdayIndex(date))!==-1;}
+
+    function planChecks(settings,tasks){
+      var issues=[],taskIssues={},daily={},weekly={},intervals={};
+      function add(index,message){var key=String(index)+"|"+message;if(issues.some(function(item){return item.key===key;}))return;issues.push({key:key,index:index,message:message});if(index>=0)taskIssues[index]=true;}
+      if(!tasks.length)add(-1,"Add at least one task.");
+      var windowStart=minutesFromTime(settings.start),windowStop=minutesFromTime(settings.stop),deadline=new Date(settings.deadline);
+      tasks.forEach(function(task,index){
+        var minutes=Number(task.minutes),start=minutesFromTime(task.start);
+        if(!task.title||!task.date||!task.start||!Number.isFinite(minutes)){add(index,"Task "+(index+1)+" needs a title, date, start time and effort.");return;}
+        if(minutes<15||minutes>480||minutes%15!==0){add(index,"Task "+(index+1)+" effort must be 15–480 minutes in 15-minute steps.");return;}
+        if(task.owner==="You"&&!isAvailable(settings,task.date))add(index,"Task "+(index+1)+" is on a day you did not select.");
+        if(task.owner==="You"&&(start<windowStart||start+minutes>windowStop))add(index,"Task "+(index+1)+" falls outside the chosen study window.");
+        if(taskEnd(task)>deadline)add(index,"Task "+(index+1)+" finishes after the assignment deadline.");
+        if(task.status!=="done"&&taskEnd(task)<new Date())add(index,"Task "+(index+1)+" is scheduled in the past.");
+        if(settings.type==="solo"&&task.owner!=="You")add(index,"Individual assignments can only assign work to you.");
+        if(task.owner==="You"){var day=task.date,week=weekKey(task.date);daily[day]=(daily[day]||0)+minutes;weekly[week]=(weekly[week]||0)+minutes;intervals[day]=intervals[day]||[];intervals[day].push({index:index,start:start,end:start+minutes});}
+      });
+      Object.keys(daily).forEach(function(day){if(daily[day]>windowStop-windowStart)add(-1,dateLabel(day,false)+" exceeds the available study window.");});
+      Object.keys(weekly).forEach(function(week){if(weekly[week]>settings.weeklyMinutes)add(-1,"Week of "+dateLabel(week,false)+" exceeds the "+effortLabel(settings.weeklyMinutes)+" weekly capacity.");});
+      Object.keys(intervals).forEach(function(day){var rows=intervals[day].sort(function(a,b){return a.start-b.start;});for(var i=0;i<rows.length;i++){for(var j=i+1;j<rows.length&&rows[j].start<rows[i].end;j++){add(rows[i].index,"Tasks overlap on "+dateLabel(day,false)+".");add(rows[j].index,"Tasks overlap on "+dateLabel(day,false)+".");}}});
+      return {issues:issues,taskIssues:taskIssues};
+    }
+
+    // Compares your remaining effort with the study time left before the deadline, after daily windows and weekly limits.
+    function planCapacity(settings,tasks){
+      var needed=0,weeks={},now=new Date(),deadline=new Date(settings.deadline),cursor=startOfDay(),deadlineDay=startOfDay(settings.deadline),todayKey=localDateKey(now),windowStart=minutesFromTime(settings.start),windowStop=minutesFromTime(settings.stop);
+      tasks.forEach(function(task){if(task.owner==="You")needed+=safeMinutes(task)*(100-taskProgress(task))/100;});
+      needed=Math.round(needed/15)*15;
+      if(Number.isNaN(deadline.getTime())||deadline<=now)return {needed:needed,fits:0,short:0,past:true,weekBound:false,windowBound:false};
+      while(cursor<=deadlineDay){var key=localDateKey(cursor),week=weekKey(key);weeks[week]=weeks[week]||0;if(isAvailable(settings,key)){var from=windowStart,to=windowStop;if(key===todayKey)from=Math.max(from,now.getHours()*60+now.getMinutes());if(key===localDateKey(deadline))to=Math.min(to,deadline.getHours()*60+deadline.getMinutes());weeks[week]+=Math.max(0,to-from);}cursor.setDate(cursor.getDate()+1);}
+      var fits=0,weekBound=false,windowBound=false;Object.keys(weeks).forEach(function(week){fits+=Math.min(weeks[week],settings.weeklyMinutes);if(weeks[week]>=settings.weeklyMinutes)weekBound=true;if(weeks[week]<=settings.weeklyMinutes)windowBound=true;});
+      fits=Math.floor(fits/15)*15;
+      return {needed:needed,fits:fits,short:Math.max(0,needed-fits),past:false,weekBound:weekBound,windowBound:windowBound};
+    }
+
+    function renderHealth(element,checks,settings,tasks){
+      tasks=tasks||[];var capacity=planCapacity(settings,tasks);
+      if(!checks.issues.length&&!capacity.short){element.className="notice ok";element.innerHTML="<strong>This plan fits your available time</strong>";return;}
+      // Name tasks by title (Plan cards are not numbered) and drop the duplicate message each overlap pair produces.
+      var seen={},details=[];checks.issues.forEach(function(issue){var task=issue.index>=0&&tasks[issue.index],text=task&&task.title?issue.message.replace(/^Task \d+/,"“"+task.title+"”"):issue.message;if(!seen[text]){seen[text]=true;details.push(text);}});
+      var head,body,fixes=[];
+      if(capacity.short){head=effortLabel(capacity.short)+" of work does not fit";body="This plan needs "+effortLabel(capacity.needed)+", but only "+effortLabel(capacity.fits)+" fits before the deadline. Make more room:";if(capacity.weekBound)fixes.push(["hours","Raise weekly limit"]);if(capacity.windowBound){fixes.push(["days","Add study days"]);fixes.push(["window","Extend study window"]);}}
+      else{head="Review "+details.length+" schedule conflict"+(details.length===1?"":"s");body=capacity.past?"The deadline has passed.":"The total work fits. Move the marked tasks to clear these conflicts.";}
+      element.className="notice warn";
+      element.innerHTML="<strong>"+esc(head)+"</strong>"+esc(body)+(fixes.length?'<div class="fixrow">'+fixes.map(function(fix){return '<button type="button" class="btn small" data-fix="'+fix[0]+'">'+esc(fix[1])+"</button>";}).join("")+"</div>":"")+(details.length?"<details><summary>Show "+details.length+" detail"+(details.length===1?"":"s")+"</summary><ul>"+details.map(function(text){return "<li>"+esc(text)+"</li>";}).join("")+"</ul></details>":"");
+    }
+
+    // A fix button opens Step 1 of the plan builder at the constraint that adds capacity.
+    function openCapacityFix(kind){
+      var target=kind==="hours"?$("f-hours"):kind==="window"?$("f-stop"):$("availableDays").querySelector("input");
+      if($("panel-add").hidden)$("editCurrent").click();
+      showStep(1,false);
+      setTimeout(function(){var field=target.closest(".field");target.scrollIntoView({block:"center"});target.focus();field.classList.add("fix-target");setTimeout(function(){field.classList.remove("fix-target");},2500);},0);
+    }
+
+    // Translate a progress percentage into time done and left, so a pause reads in time as well as percent.
+    function remainingMinutes(task){return Math.round(safeMinutes(task)*(100-taskProgress(task))/100/5)*5;}
+    function hasPartialProgress(task){return (task.status==="in-progress"||task.status==="paused")&&taskProgress(task)>0;}
+    function timeLeftLabel(task){return effortLabel(remainingMinutes(task))+" left of "+effortLabel(task.minutes);}
+    function updatePauseEstimate(){var task=pauseTarget&&pauseTarget.task,custom=$("customProgress").value,value=custom!==""?Number(custom):selectedProgress;if(!task||!Number.isInteger(value)||value<0||value>99){$("pauseEstimate").textContent="";return;}var total=safeMinutes(task),left=Math.round(total*(100-value)/100/5)*5;$("pauseEstimate").textContent="About "+effortLabel(total-left)+" done · "+effortLabel(left)+" left of "+effortLabel(total);}
+
+    // After Reschedule, open the moved task in Plan and highlight it.
+    function showMovedTask(){
+      var moved=lastMoved;lastMoved=null;if(!moved)return;current=moved.assignmentId;renderAll();selectTab("panel-plan");
+      var row=Array.prototype.find.call($("taskList").querySelectorAll(".task"),function(node){return node.dataset.taskId===moved.taskId;});if(!row)return;
+      row.scrollIntoView({block:"center"});row.classList.add("flash");var action=row.querySelector("button");if(action)action.focus();setTimeout(function(){row.classList.remove("flash");},2500);
+    }
+
+    function findGap(intervals,start,stop,duration){var cursor=start;intervals.sort(function(a,b){return a.start-b.start;});for(var i=0;i<intervals.length;i++){if(cursor+duration<=intervals[i].start)return cursor;cursor=Math.max(cursor,intervals[i].end);}return cursor+duration<=stop?cursor:null;}
+    function findSlot(settings,minutes,fromDate,tasks,excludeTask,minimumStart){
+      var cursor=startOfDay(fromDate||new Date()),firstDay=localDateKey(cursor),deadlineDay=startOfDay(settings.deadline),deadlineMoment=new Date(settings.deadline);
+      while(cursor<=deadlineDay){
+        var key=localDateKey(cursor);
+        if(isAvailable(settings,key)){
+          var week=weekKey(key),weekUsed=0,intervals=[];
+          tasks.forEach(function(task){if(task===excludeTask||task.owner!=="You"||!task.date||!task.start)return;if(weekKey(task.date)===week)weekUsed+=Number(task.minutes)||0;if(task.date===key)intervals.push({start:minutesFromTime(task.start),end:minutesFromTime(task.start)+Number(task.minutes||0)});});
+          var earliest=minutesFromTime(settings.start);if(key===localDateKey(new Date())){var now=new Date();earliest=Math.max(earliest,Math.ceil((now.getHours()*60+now.getMinutes())/15)*15);}if(key===firstDay&&Number.isFinite(minimumStart))earliest=Math.max(earliest,minimumStart);
+          var start=findGap(intervals,earliest,minutesFromTime(settings.stop),minutes);
+          if(start!==null&&weekUsed+minutes<=settings.weeklyMinutes){var proposal={date:key,start:timeValue(start),minutes:minutes};if(taskEnd(proposal)<=deadlineMoment)return {date:key,start:proposal.start};}
+        }
+        cursor.setDate(cursor.getDate()+1);
+      }
+      return null;
+    }
+
+    function nextTask(){var candidates=[];assignments.forEach(function(a){a.tasks.forEach(function(t){if(t.owner==="You"&&t.status!=="done"&&t.status!=="blocked")candidates.push({assignment:a,task:t});});});candidates.sort(function(x,y){return taskEnd(x.task)-taskEnd(y.task);});return candidates[0]||null;}
+    function nextRescheduleSlot(item){var base=startOfDay(item.task.date),today=startOfDay(),minimum=null;if(base<today){base=today;}else{minimum=minutesFromTime(item.task.start)+Number(item.task.minutes);}return findSlot(settingsFor(item.assignment),Number(item.task.minutes),base,item.assignment.tasks,item.task,minimum);}
+    function renderToday(){
+      $("pauseToday").hidden=true;$("completeToday").hidden=true;$("startToday").hidden=false;$("todayStatus").textContent="";$("todayMoved").hidden=!lastMoved;if(lastMoved)$("todayMovedText").textContent="Moved “"+lastMoved.title+"” to "+lastMoved.to+".";
+      $("emptyState").hidden=assignments.length>0;$("asgHead").hidden=assignments.length===0;$("todayCard").hidden=assignments.length===0;
+      if(!assignments.length)return;
+      var item=nextTask();
+      if(!item){$("todayTask").textContent="You are caught up";$("todayCode").textContent="No unfinished, unblocked tasks are assigned to you";$("todayEffort").textContent="Take a proper break";$("todayBoundary").textContent="No action needed";$("todayRisk").textContent="Clear";$("todayRisk").className="pill ok";$("startToday").disabled=true;$("moveToday").disabled=true;return;}
+      var urgency=dateUrgency(item.task.date);
+      $("todayTask").textContent=item.task.title;$("todayCode").textContent=item.assignment.code+" · "+item.assignment.title;
+      $("todayEffort").textContent=(hasPartialProgress(item.task)?timeLeftLabel(item.task):effortLabel(item.task.minutes))+" · "+timeLabel(item.task.start)+"–"+endTimeLabel(item.task);$("todayBoundary").textContent="Study window ends "+timeLabel(item.assignment.stop);$("todayStatus").textContent=statusLabel(item.task);
+      $("todayRisk").textContent=urgency.label;$("todayRisk").className="pill "+urgency.className;
+      $("startToday").textContent=item.task.status==="paused"?"Resume task":"Start task";$("startToday").hidden=item.task.status==="in-progress";$("startToday").disabled=false;$("moveToday").disabled=false;
+      $("pauseToday").hidden=item.task.status!=="in-progress";$("completeToday").hidden=["in-progress","paused"].indexOf(item.task.status)===-1;
+    }
+
+    function renderAssignments(){
+      var el=$("asgList");el.innerHTML="";
+      assignments.forEach(function(a){
+        var p=pct(a),left=daysLeft(a),urgency=dateUrgency(a.deadline),settings=settingsFor(a),capacity=planCapacity(settings,a.tasks),alert=p<100&&!capacity.past?(capacity.short?effortLabel(capacity.short)+" of work does not fit before the deadline":planChecks(settings,a.tasks).issues.length?"Schedule conflicts to review":""):"",div=document.createElement("div");if(alert&&urgency.className==="on-track")urgency={className:"soon",label:"Needs review"};div.className="asg "+urgency.className;div.setAttribute("role","button");div.tabIndex=0;div.setAttribute("aria-label",a.code+" "+a.title+", "+urgency.label+", "+p+" percent complete"+(alert?", "+alert:""));
+        div.innerHTML='<div class="toprow"><span class="code">'+esc(a.code)+'</span><span class="due '+urgency.className+'">'+esc(urgency.label)+' · '+esc(dateLabel(a.deadline,true))+'</span></div><b>'+esc(a.title)+'</b>'+(alert?'<p class="asg-alert">'+esc(alert)+'</p>':'')+'<div class="pbar '+(p===100?"g":"")+'" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+p+'"><i style="width:'+p+'%"></i></div><div class="pmeta"><span>'+p+'% by effort</span><span>'+(left<0?Math.abs(left)+" days overdue":left+" days left")+'</span></div>';
+        function open(){current=a.id;renderPlan();selectTab("panel-plan");}div.addEventListener("click",open);div.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});el.appendChild(div);
+      });
+    }
+
+    function renderPlan(){
+      var select=$("planAssignment");select.innerHTML="";assignments.forEach(function(item){var option=document.createElement("option");option.value=item.id;option.textContent=item.code+" · "+item.title;select.appendChild(option);});
+      var a=assignments.find(function(x){return x.id===current;})||assignments[0];
+      if(!a){current=null;select.disabled=true;select.innerHTML='<option value="">No assignment available</option>';$("planCode").textContent="No assignment";$("planTitle").textContent="Add an assignment to build a plan";$("planMeta").textContent="No tasks yet";$("planReason").textContent="The plan builder starts from Today.";$("ringTxt").textContent="0%";$("progressRing").setAttribute("aria-label","Assignment progress: 0%");$("ringVal").style.strokeDashoffset="263.9";$("taskList").innerHTML="";$("editCurrent").disabled=true;$("editCurrent").hidden=true;$("planEmptyAdd").hidden=false;$("currentPlanHealth").className="notice";$("currentPlanHealth").textContent="No plan to check yet.";return;}
+      current=a.id;select.disabled=false;select.value=a.id;$("editCurrent").disabled=false;$("editCurrent").hidden=false;$("planEmptyAdd").hidden=true;$("planCode").textContent=a.code+" · "+(a.type==="team"?"team assignment":"individual");$("planTitle").textContent=a.title;
+      var completed=a.tasks.filter(function(t){return t.status==="done";}).length;$("planMeta").textContent=completed+" of "+a.tasks.length+" tasks done · due "+dateLabel(a.deadline,true);$("planReason").textContent=a.reason;
+      var p=pct(a),circumference=263.9;$("ringVal").style.strokeDashoffset=String(circumference*(1-p/100));$("ringTxt").textContent=p+"%";$("progressRing").setAttribute("aria-label","Assignment progress: "+p+"%");
+      var settings=settingsFor(a),checks=planChecks(settings,a.tasks);renderHealth($("currentPlanHealth"),checks,settings,a.tasks);
+      var el=$("taskList"),rows=a.tasks.map(function(task,index){return {task:task,index:index};});el.innerHTML="";
+      function appendTaskGroup(title,items,className){
+        if(!items.length)return;
+        var group=document.createElement("div");group.className="task-group "+className;group.innerHTML='<p class="task-group-title">'+esc(title)+' <span class="helper">('+items.length+')</span></p>';
+        items.forEach(function(item){
+          var t=item.task,index=item.index,progress=taskProgress(t),urgency=dateUrgency(t.date),dateState=t.status==="done"?"Completed":urgency.label,div=document.createElement("div"),canEdit=t.owner==="You";
+          div.className="task "+(t.status==="done"?"done ":urgency.className+" ")+(checks.taskIssues[index]?"conflict":"");
+          div.dataset.taskId=t.id;
+          div.innerHTML='<span class="what"><b>'+esc(t.title)+'</b><span class="task-date '+(t.status==="done"?"":urgency.className)+'">'+esc(dateState)+' · '+esc(dateLabel(t.date,false))+" · "+esc(timeLabel(t.start))+"–"+esc(endTimeLabel(t))+" · "+esc(hasPartialProgress(t)?timeLeftLabel(t):effortLabel(t.minutes))+(a.type==="team"?' · updated '+esc(t.updated):'')+'</span>'+(t.movedFrom&&t.status!=="done"?'<span class="moved-note">Moved from '+esc(t.movedFrom)+'</span>':'')+'<div class="task-progress" role="progressbar" aria-label="'+esc(t.title)+' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+progress+'"><i style="width:'+progress+'%"></i></div><span class="task-actions">'+(a.type==="team"?'<span class="who '+(canEdit?"you":"")+'">'+esc(t.owner)+'</span>':'')+'<span class="status '+esc(t.status)+'">'+esc(statusLabel(t))+'</span></span></span>';
+          function addAction(label,className,action){var button=document.createElement("button");button.type="button";button.className="btn text small "+className;button.textContent=label;button.addEventListener("click",action);div.querySelector(".task-actions").appendChild(button);}
+          if(canEdit){
+            if(t.status==="done")addAction("Reopen","task-reopen",function(){t.status="not-started";t.progress=0;t.updated="Reopened just now";renderAll();focusTaskAction(t);toast("Reopened: "+t.title);});
+            if(t.status==="not-started"||t.status==="paused")addAction(t.status==="paused"?"Resume task":"Start task","task-start",function(){startTask(t);});
+            if(t.status==="in-progress")addAction("Pause task","task-pause",function(){requestPause(a,t);updatePauseEstimate();});
+            if(t.status==="in-progress"||t.status==="paused")addAction("Complete task","task-complete",function(){requestCompletion(a,t);});
+          }
+          group.appendChild(div);
+        });
+        el.appendChild(group);
+      }
+      appendTaskGroup("Your tasks",rows.filter(function(item){return item.task.owner==="You";}),"yours");
+      appendTaskGroup("Team tasks",rows.filter(function(item){return item.task.owner!=="You";}),"team");
+    }
+
+    function fictionalCircleMembers(assignment){
+      var isComp=assignment.code==="COMP7110";
+      return isComp?
+        [{initials:"AR",name:"Alex R.",progress:46,recency:"Updated recently"},{initials:"SK",name:"Sam K.",progress:63,recency:"Updated this week"}]:
+        [{initials:"JT",name:"Jordan T.",progress:38,recency:"Updated recently"},{initials:"ML",name:"Morgan L.",progress:57,recency:"Updated this week"}];
+    }
+    function memberCard(member,labelText){
+      var hasProgress=Number.isFinite(member.progress),pctLabel=hasProgress?member.progress+"%":"—";
+      var bar=hasProgress?'<span class="member-bar" role="progressbar" aria-label="'+esc(member.name)+' '+esc(labelText)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+esc(member.progress)+'"><i style="width:'+esc(member.progress)+'%"></i></span>':'<span class="member-bar" aria-label="No planned effort assigned"><i style="width:0"></i></span>';
+      return '<div class="member"><span class="avatar '+(member.isYou?"":"peer")+'">'+esc(member.initials)+'</span><span class="member-info"><b>'+esc(member.name)+'</b><span>'+esc(labelText)+'</span></span><span class="member-pct">'+esc(pctLabel)+'</span>'+bar+'</div>';
+    }
+    function personalProgressSummary(assignment){var progress=personalProgress(assignment);return progress.hasAssigned?progress.value+"% reported progress across assigned effort":"No planned effort is currently assigned to you";}
+    function selectedGroupAssignment(){return assignments.find(function(a){return a.id===selectedGroupAssignmentId;})||null;}
+    function renderGroup(){
+      var select=$("groupAssignment"),preferred=selectedGroupAssignmentId||current||(assignments[0]&&assignments[0].id);select.innerHTML="";
+      assignments.forEach(function(a){var option=document.createElement("option");option.value=a.id;option.textContent=a.code+" · "+a.title;select.appendChild(option);});
+      $("groupEmpty").hidden=assignments.length>0;
+      if(!assignments.length){select.disabled=true;select.innerHTML='<option value="">No assignment available</option>';$("groupLocked").hidden=true;$("groupOpen").hidden=true;$("memberList").innerHTML="";selectedGroupAssignmentId=null;return;}
+      select.disabled=false;var assignment=assignments.find(function(a){return a.id===preferred;})||assignments[0];selectedGroupAssignmentId=assignment.id;select.value=assignment.id;
+      var personal=personalProgress(assignment),summary=personalProgressSummary(assignment),recency=personalRecency(assignment),fictionalMembers=fictionalCircleMembers(assignment),audience=fictionalMembers.map(function(member){return member.name;}).join(" and ");
+      $("lockedSharePreview").textContent='In “'+assignment.code+' · '+assignment.title+'”, circle members will see: “Prototype user” · '+summary+' · '+recency.toLowerCase()+'.';
+      $("lockedAudience").textContent="Visible only to the simulated opted-in members of this circle: "+audience+" — their progress stays hidden until you opt in.";
+      var sharing=Boolean(sharingByAssignment[assignment.id]);$("groupLocked").hidden=sharing;$("groupOpen").hidden=!sharing;
+      $("lockedGroupTitle").textContent=assignment.code+" · "+assignment.title;$("openGroupTitle").textContent=assignment.code+" · "+assignment.title;
+      if(!sharing){$("memberList").innerHTML="";$("sharePreview").hidden=true;return;}
+      var members=[{initials:"YOU",name:"You",progress:personal.value,recency:recency,isYou:true}].concat(fictionalMembers.map(function(m){return Object.assign({isYou:false},m);}));
+      $("memberList").innerHTML=members.map(function(member){return memberCard(member,member.isYou?("Reported progress across assigned effort · "+member.recency):("Fictional member · "+member.recency));}).join("");
+      $("sharePreviewText").textContent='“Prototype user” · '+summary+' · '+recency.toLowerCase()+'. No task titles, marks, schedules or wellbeing data.';
+    }
+
+    function renderFriends(){
+      var hasAny=assignments.length>0;
+      $("friendsEmpty").hidden=hasAny;$("friendsContent").hidden=!hasAny;
+      if(!hasAny)return;
+      var courses=[];assignments.forEach(function(a){if(courses.indexOf(a.code)===-1)courses.push(a.code);});
+      var courseSelect=$("friendsCourse"),chosenCourse=courses.indexOf(selectedFriendsCourse)!==-1?selectedFriendsCourse:(courses.indexOf(current&&(assignments.find(function(a){return a.id===current;})||{}).code)!==-1?(assignments.find(function(a){return a.id===current;})||{}).code:courses[0]);
+      courseSelect.innerHTML=courses.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("");
+      courseSelect.value=chosenCourse;selectedFriendsCourse=chosenCourse;
+      var courseFriends=fictionalCourseFriends(chosenCourse);
+      $("courseFriendList").innerHTML=courseFriends.map(function(m){return memberCard(Object.assign({isYou:false},m),"Fictional classmate · "+m.recency);}).join("");
+
+      var teamAssignments=assignments.filter(function(a){return a.type==="team";});
+      $("teamRosterEmpty").hidden=teamAssignments.length>0;$("teamRosterContent").hidden=teamAssignments.length===0;
+      if(!teamAssignments.length){$("friendsTeamAssignment").innerHTML="";$("teamMemberList").innerHTML="";selectedFriendsTeamId=null;return;}
+      var teamSelect=$("friendsTeamAssignment"),chosenTeamId=teamAssignments.some(function(a){return a.id===selectedFriendsTeamId;})?selectedFriendsTeamId:(teamAssignments.some(function(a){return a.id===current;})?current:teamAssignments[0].id);
+      teamSelect.innerHTML=teamAssignments.map(function(a){return '<option value="'+esc(a.id)+'">'+esc(a.code)+' · '+esc(a.title)+'</option>';}).join("");
+      teamSelect.value=chosenTeamId;selectedFriendsTeamId=chosenTeamId;
+      var teamAssignment=teamAssignments.find(function(a){return a.id===chosenTeamId;}),roster=teamRoster(teamAssignment);
+      $("teamMemberList").innerHTML=roster.map(function(owner){
+        var progress=progressForOwner(teamAssignment,owner),recency=ownerRecency(teamAssignment,owner),isYou=owner==="You",isUnassigned=owner==="Unassigned";
+        var member={initials:initials(owner),name:isUnassigned?"Unassigned work":owner,progress:progress.hasAssigned?progress.value:null,isYou:isYou};
+        var labelText=!progress.hasAssigned?"No effort currently assigned":isYou?("Reported progress across assigned effort · "+recency):isUnassigned?("Awaiting an owner · "+recency):("Teammate's reported progress · "+recency);
+        return memberCard(member,labelText);
+      }).join("");
+    }
+
+    function renderDays(selected){var chosen=selected||[0,1,2,3,4],el=$("availableDays");el.innerHTML="";DAY_LABELS.forEach(function(label,index){var wrap=document.createElement("label");wrap.className="day";wrap.innerHTML='<input type="checkbox" value="'+index+'" '+(chosen.indexOf(index)!==-1?"checked":"")+' aria-label="'+label+'"><span>'+label.slice(0,2)+'</span>';el.appendChild(wrap);});}
+    function setSelectedDays(selected){Array.prototype.forEach.call($("availableDays").querySelectorAll("input"),function(input){input.checked=selected.indexOf(Number(input.value))!==-1;});}
+    function availableDayIndexes(){return Array.prototype.map.call($("availableDays").querySelectorAll("input:checked"),function(input){return Number(input.value);});}
+    function readFormSettings(){return {code:$("f-code").value.trim().toUpperCase(),title:$("f-title").value.trim(),type:$("f-type").value,deadline:$("f-deadline").value,brief:$("f-brief").value.trim(),available:availableDayIndexes(),weeklyMinutes:Number($("f-hours").value)*60,totalEffort:Number($("f-effort").value),start:$("f-start").value,stop:$("f-stop").value};}
+    function deriveTitles(brief){
+      var lines=brief.split(/\n|;/).map(function(line){return line.replace(/^\s*[-*\d.)]+\s*/,"").trim();}).filter(function(line){return line.length>3;});
+      if(lines.length>=2)return ["Review brief and success criteria"].concat(lines.slice(0,4).map(function(line){return "Complete "+line;})).concat(["Final review and submission"]);
+      if(/interview|test card|learning card/i.test(brief))return ["Review criteria and prepare test card","Prepare the prototype task","Run prototype interviews","Synthesise evidence","Update project artefacts","Final review and submission"];
+      return ["Review brief and success criteria","Create outline and gather material","Complete first draft","Review and revise","Final check and submission"];
+    }
+    function allocateEffort(total,count){var weights=count===6?[.1,.14,.24,.2,.2,.12]:[.12,.2,.34,.22,.12],minutes=[],used=0;for(var i=0;i<count;i++){var value=i===count-1?total-used:Math.max(15,Math.round(total*(weights[i]||1/count)/15)*15);minutes.push(value);used+=value;}if(minutes[count-1]<15){var shortfall=15-minutes[count-1];minutes[count-1]=15;minutes[0]=Math.max(15,minutes[0]-shortfall);}return minutes;}
+    function workDates(settings){var dates=[],cursor=startOfDay(),deadlineMoment=new Date(settings.deadline),deadline=startOfDay(deadlineMoment),deadlineKey=localDateKey(deadline),deadlineMinutes=deadlineMoment.getHours()*60+deadlineMoment.getMinutes(),windowStart=minutesFromTime(settings.start);while(cursor<=deadline){var key=localDateKey(cursor),hasUsableTime=key!==deadlineKey||deadlineMinutes-windowStart>=15;if(isAvailable(settings,key)&&hasUsableTime)dates.push(key);cursor.setDate(cursor.getDate()+1);}return dates;}
+    function generatePlan(){
+      draftSettings=readFormSettings();var titles=deriveTitles(draftSettings.brief),efforts=allocateEffort(draftSettings.totalEffort,titles.length),dates=workDates(draftSettings);generated=[];
+      titles.forEach(function(title,index){var target=dates.length?dateOnly(dates[Math.floor(index*(dates.length-1)/Math.max(1,titles.length-1))]):startOfDay(draftSettings.deadline),slot=findSlot(draftSettings,efforts[index],target,generated,null),last=generated[generated.length-1];if(!slot&&last)slot=findSlot(draftSettings,efforts[index],dateOnly(last.date),generated,null,minutesFromTime(last.start)+Number(last.minutes));generated.push({id:"g"+Date.now()+"-"+index,title:title,date:slot?slot.date:localDateKey(target),start:slot?slot.start:draftSettings.start,owner:"You",minutes:efforts[index],status:"not-started",updated:"Not started"});});
+      $("generatedReason").textContent="Planned from "+effortLabel(draftSettings.totalEffort)+" of work on "+draftSettings.available.map(function(day){return DAY_LABELS[day];}).join(", ")+", up to "+effortLabel(draftSettings.weeklyMinutes)+" a week, "+timeLabel(draftSettings.start)+"–"+timeLabel(draftSettings.stop)+".";renderGenerated();
+    }
+    function ownerOptions(task){var owners=draftSettings&&draftSettings.type==="team"?["You","Unassigned","Teammate"]:["You"];if(owners.indexOf(task.owner)===-1)owners.push(task.owner);return owners.map(function(owner){return '<option value="'+esc(owner)+'">'+esc(owner)+'</option>';}).join("");}
+    function renderGenerated(){
+      var el=$("generatedTasks");el.innerHTML="";
+      generated.forEach(function(t,index){var row=document.createElement("div");row.className="edit-task";row.innerHTML='<div class="edit-head"><span class="eyebrow" style="margin:0">Task '+(index+1)+'</span><button class="remove-task" type="button">Remove</button></div><label class="edit-field">Task title<input class="gen-title" value="'+esc(t.title)+'"></label><div class="edit-grid"><label class="edit-field">Date<input class="gen-date" type="date" value="'+esc(t.date)+'"></label><label class="edit-field">Start time<input class="gen-start" type="time" value="'+esc(t.start||draftSettings.start)+'"></label><label class="edit-field">Expected effort (minutes)<input class="gen-effort" type="number" min="15" max="480" step="15" value="'+esc(t.minutes)+'"></label><label class="edit-field">Owner<select class="gen-owner">'+ownerOptions(t)+'</select></label></div>';row.querySelector(".gen-owner").value=t.owner;
+        row.querySelector(".remove-task").addEventListener("click",function(){readGenerated();if(generated.length===1){toast("A plan needs at least one task.");return;}generated.splice(index,1);renderGenerated();});
+        Array.prototype.forEach.call(row.querySelectorAll("input,select"),function(input){input.addEventListener("change",renderGeneratedHealth);input.addEventListener("input",renderGeneratedHealth);});el.appendChild(row);});
+      renderGeneratedHealth();
+    }
+    function readGenerated(){var previous=generated;generated=Array.prototype.map.call($("generatedTasks").querySelectorAll(".edit-task"),function(row,index){var old=previous[index]||{};return {id:old.id||"g"+Date.now()+"-"+index,title:row.querySelector(".gen-title").value.trim(),date:row.querySelector(".gen-date").value,start:row.querySelector(".gen-start").value,minutes:Number(row.querySelector(".gen-effort").value),owner:row.querySelector(".gen-owner").value,status:old.status||"not-started",progress:old.progress,updated:old.updated||"Not started"};});return generated;}
+    function renderGeneratedHealth(){if(!draftSettings)return;readGenerated();var checks=planChecks(draftSettings,generated);renderHealth($("planHealth"),checks,draftSettings,generated);Array.prototype.forEach.call($("generatedTasks").querySelectorAll(".edit-task"),function(row,index){var effort=row.querySelector(".gen-effort"),minutes=Number(effort.value),invalid=!Number.isFinite(minutes)||minutes<15||minutes>480||minutes%15!==0;row.classList.toggle("conflict",Boolean(checks.taskIssues[index]));effort.setAttribute("aria-invalid",String(invalid));});$("confirmPlan").textContent=checks.issues.length?"Save draft with conflicts":"Use this plan";}
+    function showStep(step,moveFocus){$("addStep1").hidden=step!==1;$("addStep2").hidden=step!==2;var dots=$("stepper").querySelectorAll(".stepdot");dots.forEach(function(dot,index){dot.classList.toggle("on",index<step);if(index===step-1)dot.setAttribute("aria-current","step");else dot.removeAttribute("aria-current");});$("stepper").setAttribute("aria-label","Step "+step+" of 2");$("regenerateWarning").hidden=!(editingId&&step===1);$("generatePlanButton").textContent=editingId?"Replace tasks with new draft":"Generate draft plan";if(moveFocus)setTimeout(function(){var heading=$(step===1?"addStep1":"addStep2").querySelector("h2");heading.tabIndex=-1;heading.focus();},0);}
+
+    function setSelectedProgress(value){selectedProgress=value;Array.prototype.forEach.call(document.querySelectorAll(".progress-choice"),function(button){button.setAttribute("aria-pressed",String(Number(button.dataset.progress)===value));});}
+    function focusTaskAction(task){
+      if(!$("panel-plan").hidden){var row=Array.prototype.find.call($("taskList").querySelectorAll(".task"),function(node){return node.dataset.taskId===task.id;});var action=row&&row.querySelector("button");if(action)action.focus();}
+      else if(!$("panel-asg").hidden){var button=$("startToday").hidden?$("pauseToday"):$("startToday");if(!button.hidden&&!button.disabled)button.focus();}
+    }
+    function startTask(task){
+      if(task.owner!=="You"||["not-started","paused"].indexOf(task.status)===-1)return;
+      var resuming=task.status==="paused";task.progress=resuming?taskProgress(task):0;task.status="in-progress";task.updated=resuming?"Resumed just now":"Started just now";renderAll();focusTaskAction(task);toast((resuming?"Resumed: ":"Started: ")+task.title);
+    }
+    function requestCompletion(assignment,task){
+      if(task.owner!=="You"||["in-progress","paused"].indexOf(task.status)===-1)return;
+      completionTarget={assignment:assignment,task:task};$("completionTaskName").textContent=assignment.code+" · "+task.title;$("completionDialog").showModal();$("notFinished").focus();
+    }
+    function requestPause(assignment,task){
+      if(task.owner!=="You"||task.status!=="in-progress")return;
+      pauseTarget={assignment:assignment,task:task};setSelectedProgress(taskProgress(task));
+      $("customProgress").value=[30,50,70].indexOf(selectedProgress)===-1?String(selectedProgress):"";$("progressError").textContent="";$("pauseTaskName").textContent=assignment.code+" · "+task.title;$("pauseDialog").showModal();$("customProgress").focus();
+    }
+    function closeCompletion(){if($("completionDialog").open)$("completionDialog").close();completionTarget=null;}
+    function closePause(){if($("pauseDialog").open)$("pauseDialog").close();pauseTarget=null;}
+    function saveTaskProgress(value){
+      if(!pauseTarget||pauseTarget.task.owner!=="You"||pauseTarget.task.status!=="in-progress")return;
+      var task=pauseTarget.task,progress=Number(value);
+      if(value===null||String(value).trim()===""||!Number.isInteger(progress)||progress<0||progress>99){$("progressError").textContent="Enter a whole number from 0 to 99.";return;}
+      task.status="paused";task.progress=progress;task.updated="Paused just now";closePause();renderAll();focusTaskAction(task);toast("Paused at "+progress+"%: "+task.title);
+    }
+    function confirmTaskCompletion(){
+      if(!completionTarget||completionTarget.task.owner!=="You"||["in-progress","paused"].indexOf(completionTarget.task.status)===-1)return;
+      var task=completionTarget.task;task.status="done";task.progress=100;task.updated="Completed just now";closeCompletion();renderAll();focusTaskAction(task);toast("Completed: "+task.title);
+    }
+
+    function selectTab(panel){var tabs=document.querySelectorAll(".tab");tabs.forEach(function(tab){var selected=tab.dataset.panel===panel;tab.setAttribute("aria-selected",String(selected));tab.tabIndex=selected?0:-1;});document.querySelectorAll("main > section").forEach(function(section){section.hidden=section.id!==panel;});$("mainNav").hidden=panel==="panel-add";if(panel==="panel-group")renderGroup();if(panel==="panel-friends")renderFriends();document.querySelector("main").scrollTop=0;}
+    Array.prototype.filter.call(document.querySelectorAll(".tab"),function(tab){return !tab.hidden;}).forEach(function(tab,index,tabs){tab.addEventListener("click",function(){selectTab(tab.dataset.panel);});tab.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();var next=(index+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[next].focus();tabs[next].click();});});
+    $("planAssignment").addEventListener("change",function(e){current=e.target.value;renderPlan();});
+    $("groupAssignment").addEventListener("change",function(e){selectedGroupAssignmentId=e.target.value;$("sharePreview").hidden=true;$("reviewShare").setAttribute("aria-expanded","false");$("reviewShare").textContent="Review what others see";renderGroup();});
+    $("enableSharing").addEventListener("click",function(){var assignment=selectedGroupAssignment();if(!assignment)return;sharingByAssignment[assignment.id]=true;renderGroup();toast("Sharing is on for this prototype circle. No data was uploaded or sent.");});
+    $("reviewShare").addEventListener("click",function(){var preview=$("sharePreview"),show=preview.hidden;preview.hidden=!show;this.setAttribute("aria-expanded",String(show));this.textContent=show?"Hide sharing details":"Review what others see";});
+    $("stopSharing").addEventListener("click",function(){var assignment=selectedGroupAssignment();if(!assignment)return;sharingByAssignment[assignment.id]=false;$("sharePreview").hidden=true;$("reviewShare").setAttribute("aria-expanded","false");$("reviewShare").textContent="Review what others see";renderGroup();toast("Sharing stopped. The circle is locked again; your plan is unchanged.");});
+    $("friendsCourse").addEventListener("change",function(e){selectedFriendsCourse=e.target.value;renderFriends();});
+    $("friendsTeamAssignment").addEventListener("change",function(e){selectedFriendsTeamId=e.target.value;renderFriends();});
+    $("friendsAdd").addEventListener("click",openAddFlow);
+
+    function localDateTimeValue(date){return localDateKey(date)+"T"+pad(date.getHours())+":"+pad(date.getMinutes());}
+    function clearCustomOptions(){["f-effort","f-hours"].forEach(function(id){Array.prototype.forEach.call($(id).querySelectorAll("option[data-custom]"),function(option){option.remove();});});}
+    function setSelectWithCustom(id,value,label){var select=$(id),stringValue=String(value);Array.prototype.forEach.call(select.querySelectorAll("option[data-custom]"),function(option){option.remove();});if(!Array.prototype.some.call(select.options,function(option){return option.value===stringValue;})){var option=document.createElement("option");option.value=stringValue;option.textContent=label+" · current plan";option.dataset.custom="true";select.appendChild(option);}select.value=stringValue;}
+    function clearFormErrors(){$("formError").textContent="";Array.prototype.forEach.call($("assignmentForm").querySelectorAll('[aria-invalid="true"]'),function(element){element.removeAttribute("aria-invalid");if(element.getAttribute("aria-describedby")==="formError")element.removeAttribute("aria-describedby");});}
+    function showFormError(message,target){$("formError").textContent=message;if(target){target.setAttribute("aria-invalid","true");target.setAttribute("aria-describedby","formError");target.focus();}}
+    function openAddFlow(){editingId=null;draftSettings=null;generated=[];clearCustomOptions();$("assignmentForm").reset();clearFormErrors();renderDays([0,1,2,3,4]);var minimum=new Date(Date.now()+60*60*1000);$("f-deadline").min=localDateTimeValue(minimum);$("confirmPlan").textContent="Use this plan";showStep(1,false);selectTab("panel-add");setTimeout(function(){$("f-code").focus();},0);}
+    function closeWizard(){selectTab(editingId?"panel-plan":"panel-asg");}
+    $("openAdd").addEventListener("click",openAddFlow);$("emptyAdd").addEventListener("click",openAddFlow);$("planEmptyAdd").addEventListener("click",openAddFlow);$("closeWizard").addEventListener("click",closeWizard);$("backToForm").addEventListener("click",function(){showStep(1,true);});document.addEventListener("click",function(e){var button=e.target.closest&&e.target.closest("[data-fix]");if(button)openCapacityFix(button.dataset.fix);});
+    $("assignmentForm").addEventListener("submit",function(e){
+      e.preventDefault();clearFormErrors();var settings=readFormSettings(),message="",target=null;
+      if(!settings.code){message="Enter a course code.";target=$("f-code");}
+      else if(!settings.title){message="Enter an assignment title.";target=$("f-title");}
+      else if(!settings.deadline){message="Enter the assignment deadline.";target=$("f-deadline");}
+      else if(!Number.isFinite(settings.totalEffort)||settings.totalEffort<=0){message="Choose a total effort estimate.";target=$("f-effort");}
+      else if(!settings.available.length){message="Choose at least one day you can work.";target=$("availableDays").querySelector("input");}
+      else if(!Number.isFinite(settings.weeklyMinutes)||settings.weeklyMinutes<=0){message="Choose a weekly capacity.";target=$("f-hours");}
+      else if(minutesFromTime(settings.start)>=minutesFromTime(settings.stop)){message="The study window must end after it starts.";target=$("f-stop");}
+      else if(new Date(settings.deadline)<=new Date()){message="Use a future deadline.";target=$("f-deadline");}
+      else if(!workDates(settings).length){message="No selected work day remains before this deadline.";target=$("availableDays").querySelector("input");}
+      if(message){showFormError(message,target);return;}generatePlan();showStep(2,true);
+    });
+    $("addGeneratedTask").addEventListener("click",function(){readGenerated();var slot=findSlot(draftSettings,30,startOfDay(),generated,null);generated.push({id:"g"+Date.now(),title:"New task",date:slot?slot.date:localDateKey(startOfDay(draftSettings.deadline)),start:slot?slot.start:draftSettings.start,owner:"You",minutes:30,status:"not-started",updated:"Not started"});renderGenerated();});
+    $("confirmPlan").addEventListener("click",function(){
+      readGenerated();var hasInvalidTask=generated.some(function(t){var minutes=Number(t.minutes);return !t.title||!t.date||!t.start||!Number.isFinite(minutes)||minutes<15||minutes>480||minutes%15!==0;});if(hasInvalidTask){toast("Complete every task with an effort of 15–480 minutes in 15-minute steps.");renderGeneratedHealth();return;}
+      var checks=planChecks(draftSettings,generated),a=editingId&&assignments.find(function(item){return item.id===editingId;}),sharingReset=Boolean(a&&(a.code!==draftSettings.code||a.title!==draftSettings.title||a.type!==draftSettings.type||a.deadline!==draftSettings.deadline)),data={code:draftSettings.code,title:draftSettings.title,type:draftSettings.type,deadline:draftSettings.deadline,brief:draftSettings.brief,available:draftSettings.available.slice(),weeklyMinutes:draftSettings.weeklyMinutes,totalEffort:generated.reduce(function(sum,t){return sum+safeMinutes(t);},0),start:draftSettings.start,stop:draftSettings.stop,reason:$("generatedReason").textContent,tasks:generated.map(function(t){return Object.assign({},t);})};
+      if(a){Object.assign(a,data);current=a.id;if(sharingReset)sharingByAssignment[a.id]=false;}else{data.id="a"+(Date.now());assignments.push(data);current=data.id;}selectedGroupAssignmentId=current;editingId=null;renderAll();selectTab("panel-plan");setTimeout(function(){$("planTitle").tabIndex=-1;$("planTitle").focus();},0);toast(sharingReset?"Plan saved. Sharing was turned off because the assignment identity changed.":checks.issues.length?"Draft saved with conflicts marked for review.":"Plan saved. Your next action is ready.");
+    });
+    $("editCurrent").addEventListener("click",function(){
+      var a=assignments.find(function(x){return x.id===current;});if(!a)return;editingId=a.id;draftSettings=settingsFor(a);generated=a.tasks.map(function(t){return Object.assign({},t);});
+      $("f-code").value=a.code;$("f-title").value=a.title;$("f-type").value=a.type;$("f-deadline").value=a.deadline;$("f-brief").value=a.brief||"Review and adjust the existing task plan";setSelectWithCustom("f-effort",draftSettings.totalEffort,effortLabel(draftSettings.totalEffort));setSelectWithCustom("f-hours",draftSettings.weeklyMinutes/60,effortLabel(draftSettings.weeklyMinutes)+" per week");$("f-start").value=draftSettings.start;$("f-stop").value=draftSettings.stop;setSelectedDays(draftSettings.available);clearFormErrors();$("generatedReason").textContent=a.reason;renderGenerated();showStep(2,false);selectTab("panel-add");setTimeout(function(){var heading=$("addStep2").querySelector("h2");heading.tabIndex=-1;heading.focus();},0);
+    });
+    $("startToday").addEventListener("click",function(){var item=nextTask();if(item)startTask(item.task);});
+    $("pauseToday").addEventListener("click",function(){var item=nextTask();if(item){requestPause(item.assignment,item.task);updatePauseEstimate();}});
+    $("completeToday").addEventListener("click",function(){var item=nextTask();if(item)requestCompletion(item.assignment,item.task);});
+    $("moveToday").addEventListener("click",function(){var item=nextTask();if(!item)return;var slot=nextRescheduleSlot(item);if(!slot){current=item.assignment.id;renderPlan();selectTab("panel-plan");toast("No available slot remains before the deadline. Adjust the plan instead.");return;}var from=dateLabel(item.task.date,false)+", "+timeLabel(item.task.start),to=dateLabel(slot.date,false)+", "+timeLabel(slot.start);item.task.date=slot.date;item.task.start=slot.start;item.task.updated="Rescheduled just now";item.task.movedFrom=from;lastMoved={assignmentId:item.assignment.id,taskId:item.task.id,title:item.task.title,to:to};renderAll();var checks=planChecks(settingsFor(item.assignment),item.assignment.tasks);toast("Moved to "+to+(checks.issues.length?" · review the marked conflict.":"."));});
+    $("showMoved").addEventListener("click",showMovedTask);
+
+    $("confirmFinished").addEventListener("click",confirmTaskCompletion);
+    $("notFinished").addEventListener("click",closeCompletion);
+    document.querySelectorAll(".progress-choice").forEach(function(button){button.addEventListener("click",function(){setSelectedProgress(Number(button.dataset.progress));$("customProgress").value="";$("progressError").textContent="";updatePauseEstimate();});});
+    $("customProgress").addEventListener("input",function(){setSelectedProgress(null);$("progressError").textContent="";updatePauseEstimate();});
+    $("saveProgress").addEventListener("click",function(){var custom=$("customProgress").value;saveTaskProgress(custom!==""?custom:selectedProgress);});
+    $("cancelProgress").addEventListener("click",closePause);
+    $("completionDialog").addEventListener("cancel",function(){completionTarget=null;});
+    $("pauseDialog").addEventListener("cancel",function(){pauseTarget=null;});
+
+    function demoData(){return [
+      {id:"demo-1",code:"DECO6500",title:"Research notebook",type:"team",deadline:"2026-09-22T14:00",brief:"Interview evaluation; findings; design implications; method appendix; final review",available:[0,1,2,3,4,5],weeklyMinutes:360,totalEffort:450,start:"18:00",stop:"21:30",reason:"Fictional review data. Tasks show ownership, effort and schedule status.",tasks:[
+        {id:"d1",title:"Agree scope and split sections",date:"2026-09-16",start:"18:00",owner:"You",minutes:30,status:"done",updated:"Demo"},
+        {id:"d2",title:"Run evaluation interviews",date:"2026-09-17",start:"18:00",owner:"You",minutes:120,status:"in-progress",updated:"Demo"},
+        {id:"d3",title:"Draft findings section",date:"2026-09-18",start:"18:00",owner:"Student A",minutes:75,status:"not-started",updated:"Demo"},
+        {id:"d4",title:"Method and appendix",date:"2026-09-19",start:"18:00",owner:"Student B",minutes:75,status:"blocked",updated:"Waiting on demo data"},
+        {id:"d5",title:"Merge and full read-through",date:"2026-09-21",start:"18:00",owner:"You",minutes:120,status:"not-started",updated:"Demo"},
+        {id:"d6",title:"Export and submit",date:"2026-09-22",start:"10:00",owner:"You",minutes:30,status:"not-started",updated:"Demo"}
+      ]},
+      {id:"demo-2",code:"COMP7110",title:"Iteration 2 submission",type:"team",deadline:"2026-09-25T16:00",brief:"MVP test cards; prototype interviews; learning cards; BMC and VPC; final package",available:[0,1,2,3,4,6],weeklyMinutes:420,totalEffort:480,start:"17:30",stop:"21:30",reason:"Fictional review data with the official Friday 25 September 2026, 4:00 pm deadline.",tasks:[
+        {id:"c1",title:"Prepare MVP test cards",date:"2026-09-16",start:"17:30",owner:"You",minutes:60,status:"in-progress",updated:"Demo"},
+        {id:"c2",title:"Run prototype interviews",date:"2026-09-18",start:"17:30",owner:"Unassigned",minutes:150,status:"not-started",updated:"Demo"},
+        {id:"c3",title:"Synthesise evidence and learning cards",date:"2026-09-20",start:"17:30",owner:"You",minutes:90,status:"not-started",updated:"Demo"},
+        {id:"c4",title:"Update BMC and VPC",date:"2026-09-22",start:"17:30",owner:"Teammate",minutes:60,status:"not-started",updated:"Demo"},
+        {id:"c5",title:"Review evidence trail and package",date:"2026-09-24",start:"17:30",owner:"You",minutes:120,status:"not-started",updated:"Demo"}
+      ]}
+    ];}
+    function loadDemoState(openGroup){assignments=demoData();current="demo-2";selectedGroupAssignmentId="demo-2";sharingByAssignment={};renderAll();if(openGroup)selectTab("panel-group");toast("Fictional example loaded. Use Clear saved data at the bottom of Today to return to a clean start.");}
+    $("loadDemo").addEventListener("click",function(){loadDemoState(false);});
+    $("groupDemo").addEventListener("click",function(){loadDemoState(true);});
+    $("groupAdd").addEventListener("click",openAddFlow);
+    $("friendsDemo").addEventListener("click",function(){loadDemoState(false);selectTab("panel-friends");});
+    /* ---- W10-05 | Save and reopen personal plans (same device only) ----
+       Persists personal assignments and their tasks. Deliberately NOT persisted:
+       Group sharing consent (simulated - must never return as a real permission),
+       plan-builder drafts, and transient dialog state. */
+    var PROFILE_KEY="assignmate.v1.profile",profileName="";
+    function renderProfile(){var greeting=$("profileGreeting");greeting.textContent=profileName?"Hi, "+profileName:"";greeting.hidden=!profileName;}
+    function loadProfile(){try{var data=JSON.parse(window.localStorage.getItem(PROFILE_KEY));profileName=data&&typeof data.name==="string"?data.name.trim().slice(0,40):"";}catch(e){profileName="";}renderProfile();}
+    $("openProfile").addEventListener("click",function(){$("profileName").value=profileName;$("profileError").textContent="";$("profileDialog").showModal();$("profileName").focus();});
+    $("cancelProfile").addEventListener("click",function(){$("profileDialog").close();});
+    $("profileForm").addEventListener("submit",function(event){event.preventDefault();var name=$("profileName").value.trim();try{if(name)window.localStorage.setItem(PROFILE_KEY,JSON.stringify({name:name}));else window.localStorage.removeItem(PROFILE_KEY);}catch(e){$("profileError").textContent="Your nickname could not be saved. Please try again or cancel.";return;}profileName=name;renderProfile();renderStorageStatus();$("profileDialog").close();toast(name?"Nickname saved in this browser.":"Nickname removed.");});
+    var STORE_KEY="assignmate.v1.plans",STORE_VERSION=1;
+    var storageReady=null,persistenceSuspended=true,lastSaveFailed=false;
+
+    function storageAvailable(){
+      if(storageReady!==null)return storageReady;
+      try{var k="assignmate.probe";window.localStorage.setItem(k,"1");window.localStorage.removeItem(k);storageReady=true;}
+      catch(e){storageReady=false;}
+      return storageReady;
+    }
+    function discardSaved(){try{window.localStorage.removeItem(STORE_KEY);}catch(e){}}
+    function savePlans(){
+      if(persistenceSuspended)return false;
+      if(!storageAvailable()){lastSaveFailed=true;return false;}
+      try{
+        window.localStorage.setItem(STORE_KEY,JSON.stringify({version:STORE_VERSION,savedAt:new Date().toISOString(),current:current,assignments:assignments}));
+        lastSaveFailed=false;return true;
+      /* A failed write means this change was not saved; it does not prove storage
+         is unavailable. Keeping storageReady true leaves Clear saved data enabled,
+         which is the action that frees space when the quota is the cause. */
+      }catch(e){lastSaveFailed=true;return false;}
+    }
+    function num(value,fallback){var n=Number(value);return Number.isFinite(n)&&n>0?n:fallback;}
+    function text(value,fallback){return typeof value==="string"&&value?value:fallback;}
+    function cleanTask(t){
+      var task={id:text(t.id,"t"+Date.now()+Math.round(Math.random()*1000)),title:text(t.title,"Untitled task"),
+        date:text(t.date,""),start:text(t.start,"18:00"),owner:text(t.owner,"You"),
+        minutes:num(t.minutes,30),status:["not-started","in-progress","paused","blocked","done"].indexOf(t.status)!==-1?t.status:"not-started",
+        updated:text(t.updated,"Restored from this device")};
+      /* Carry progress only when it was genuinely reported. taskProgress() infers
+         from status when the field is absent, so writing a default 0 here would
+         silently reset a completed task to 0%. */
+      if(typeof t.progress==="number"&&Number.isFinite(t.progress))task.progress=Math.max(0,Math.min(100,t.progress));
+      if(typeof t.movedFrom==="string"&&t.movedFrom)task.movedFrom=t.movedFrom;
+      return task;
+    }
+    function usableTask(t){return t&&typeof t==="object"&&typeof t.title==="string"&&typeof t.date==="string"&&t.date.length===10&&Number.isFinite(Number(t.minutes));}
+    function usableAssignment(a){return a&&typeof a==="object"&&typeof a.id==="string"&&typeof a.code==="string"&&typeof a.title==="string"&&typeof a.deadline==="string"&&Array.isArray(a.tasks)&&a.tasks.length>0&&a.tasks.every(usableTask);}
+    function cleanAssignment(a){
+      return {id:String(a.id),code:String(a.code),title:String(a.title),type:a.type==="team"?"team":"solo",
+        deadline:String(a.deadline),brief:text(a.brief,""),
+        available:Array.isArray(a.available)?a.available.filter(function(d){return Number.isInteger(d)&&d>=0&&d<=6;}):[0,1,2,3,4],
+        weeklyMinutes:num(a.weeklyMinutes,300),totalEffort:num(a.totalEffort,0),
+        start:text(a.start,"18:00"),stop:text(a.stop,"21:30"),
+        reason:text(a.reason,"Restored from this device."),tasks:a.tasks.map(cleanTask)};
+    }
+    function loadPlans(){
+      if(!storageAvailable())return false;
+      var raw;try{raw=window.localStorage.getItem(STORE_KEY);}catch(e){return false;}
+      if(!raw)return false;
+      var data;try{data=JSON.parse(raw);}catch(e){discardSaved();return false;}
+      if(!data||typeof data!=="object"||data.version!==STORE_VERSION||!Array.isArray(data.assignments)){discardSaved();return false;}
+      var clean=data.assignments.filter(usableAssignment).map(cleanAssignment);
+      if(!clean.length){discardSaved();return false;}
+      assignments=clean;
+      current=clean.some(function(a){return a.id===data.current;})?data.current:clean[0].id;
+      selectedGroupAssignmentId=current;
+      sharingByAssignment={};
+      return true;
+    }
+    function clearSavedData(){
+      if(!storageAvailable())return false;
+      try{
+        Object.keys(window.localStorage).filter(function(k){return k.indexOf("assignmate.")===0;})
+          .forEach(function(k){window.localStorage.removeItem(k);});
+        return true;
+      }catch(e){return false;}
+    }
+    function renderStorageStatus(){
+      var el=$("storageStatus"),button=$("clearSaved"),label=$("savedLabel");if(!el)return;
+      $("savedRow").hidden=storageAvailable()&&!lastSaveFailed&&!assignments.length&&!profileName;if($("savedRow").hidden)closeClearConfirm(false);
+      if(!storageAvailable()){
+        label.textContent="This browser isn’t saving your plan.";
+        el.textContent="This browser is not allowing saving, so your plan will be lost when you reload. Everything else still works for this session.";
+        if(button)button.disabled=true;return;
+      }
+      if(button)button.disabled=false;
+      if(lastSaveFailed){label.textContent="Your last change wasn’t saved.";el.textContent="The last change could not be saved, so a reload may lose it. Your browser's storage may be full.";return;}
+      label.textContent="Saved in this browser only.";
+      el.textContent=profileName&&!assignments.length?"Your nickname is saved in this browser only.":assignments.length?"Your plan is saved in this browser and will still be here when you come back on this device.":"Nothing is saved yet. Once you add an assignment it will be kept in this browser.";
+    }
+    function openClearConfirm(){$("clearConfirm").hidden=false;$("clearSaved").setAttribute("aria-expanded","true");$("clearConfirm").scrollIntoView({block:"nearest"});$("cancelClear").focus();}
+    function closeClearConfirm(moveFocus){$("clearConfirm").hidden=true;$("clearSaved").setAttribute("aria-expanded","false");if(moveFocus)$("clearSaved").focus();}
+
+    function renderAll(){renderAssignments();renderPlan();renderToday();renderGroup();renderFriends();savePlans();renderStorageStatus();}
+
+    $("clearSaved").addEventListener("click",function(){if($("clearConfirm").hidden)openClearConfirm();else closeClearConfirm(true);});
+    $("cancelClear").addEventListener("click",function(){closeClearConfirm(true);});
+    $("confirmClear").addEventListener("click",function(){
+      closeClearConfirm(false);
+      var ok=clearSavedData();
+      profileName="";renderProfile();
+      assignments=[];current=null;selectedGroupAssignmentId=null;sharingByAssignment={};
+      selectedFriendsCourse=null;selectedFriendsTeamId=null;
+      /* Suspend saving across this render, otherwise renderAll would immediately
+         write an empty record back and the key would survive the clear. */
+      persistenceSuspended=true;renderAll();persistenceSuspended=false;discardSaved();
+      selectTab("panel-asg");
+      toast(ok?"Saved AssignMate data cleared from this browser. Nothing else was touched.":"Nothing was saved in this browser, so there was nothing to clear.");
+    });
+
+    renderDays([0,1,2,3,4]);setTodayDate();loadProfile();
+    var restored=loadPlans();
+    renderAll();
+    persistenceSuspended=false;
+    renderStorageStatus();
+    if(restored)toast("Your saved plan was restored from this device.");
+  })();
+  </script>
+</body>
+</html>
+
